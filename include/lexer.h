@@ -2,6 +2,7 @@
 #define LEXER_H
 
 #include <regex.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -35,6 +36,12 @@ struct Token {
 
 const char* token_type_to_string(enum TokenType type);
 
-char* match_comments(char *input);
+bool is_digit(char* input);
+bool is_letter(char* input);
+bool is_punctuation(char* input);
+bool is_whitespace(char* input);
+
+char* ignore_whitespace(char *input);
+char* ignore_comment(char *input);
 
 #endif /* LEXER_H */
