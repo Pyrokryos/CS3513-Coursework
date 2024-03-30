@@ -1,14 +1,12 @@
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "../include/lexer.h"
 
 int main()
 {
-  char *ptr = "     \t  \n//This is the main function. \nint main() {\n\tprintf(\"Hello, world!\"); // Print to the console.\n\treturn 0;\n}";
-  char *input = ptr;
+  char *ptr = "// This is the main function. \nint main() {\n\tprintf(\"Hello, world!\"); // Print to the console.\n\treturn 0;\n}";
 
-  input = ignore_whitespace(ptr);
-  printf("After ignoring whitespace: \n%s\n", input);
+  TokenStream *stream = lex(ptr);
+  display_list(stream);
   return 0;
 }
