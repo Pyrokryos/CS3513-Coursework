@@ -1,15 +1,31 @@
 #include "../include/lexer.h"
 
 // Declare global variables to hold compiled regex patterns.
-regex_t *digit_regex = NULL;
-regex_t *letter_regex = NULL;
-regex_t *punctuation_regex = NULL;
-regex_t *whitespace_regex = NULL;
-regex_t *comment_regex = NULL;
-regex_t *identifier_regex = NULL;
-regex_t *number_regex = NULL;
-regex_t *operator_regex = NULL;
-regex_t *string_regex = NULL;
+static regex_t *digit_regex = NULL;
+static regex_t *letter_regex = NULL;
+static regex_t *punctuation_regex = NULL;
+static regex_t *whitespace_regex = NULL;
+static regex_t *comment_regex = NULL;
+static regex_t *identifier_regex = NULL;
+static regex_t *number_regex = NULL;
+static regex_t *operator_regex = NULL;
+static regex_t *string_regex = NULL;
+
+const char* token_type_to_string(enum TokenType type)
+{
+    switch (type)
+    {
+        case DELETE: return "DELETE";
+        case IDENTIFIER: return "IDENTIFIER";
+        case INTEGER: return "INTEGER";
+        case OPERATOR: return "OPERATOR";
+        case STRING: return "STRING";
+        case PUNCTUATION: return "PUNCTUATION";
+        default:
+            fprintf(stderr, "Unknown token type encountered: %d\n", type);
+            exit(EXIT_FAILURE);
+    }
+}
 
 // Matches comments in the input string and returns the location of the comment.
 char* match_comments(char *input)
