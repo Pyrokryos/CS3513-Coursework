@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../include/linked_list.h"
 
@@ -14,14 +15,13 @@
 #define WHITESPACE_REGEX "[ \t\n]+"
 #define COMMENT_REGEX "//[]'();,\\ \ta-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\n"
 #define IDENTIFIER_REGEX "[a-zA-Z][a-zA-Z0-9_]*"
-#define NUMBER_REGEX "[0-9]+"
+#define INTEGER_REGEX "[0-9]+"
 #define OPERATOR_REGEX "[]+-\*<>&.@/:=~|$!#%^_[{}\"`?]"
 #define STRING_REGEX "\"[][.\t.][.\n.][.\\.][.\".]();, a-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\""
 
 typedef struct LinkedList TokenStream;
 
 enum TokenType {
-    DELETE,
     IDENTIFIER,
     INTEGER,
     OPERATOR,
@@ -30,9 +30,11 @@ enum TokenType {
 };
 
 struct Token {
-    char *value;
+    char* value;
     enum TokenType type;
 };
+
+TokenStream* lex(char *input);
 
 const char* token_type_to_string(enum TokenType type);
 
@@ -41,7 +43,13 @@ bool is_letter(char* input);
 bool is_punctuation(char* input);
 bool is_whitespace(char* input);
 
-char* ignore_whitespace(char *input);
-char* ignore_comment(char *input);
+char* ignore_whitespace(char* input);
+char* ignore_comment(char* input);
+
+static char* identify_identifier(char* input, TokenStream* stream);
+static char* identify_integer(char* input, TokenStream* stream);
+static char* identify_operator(char* input, TokenStream* stream);
+static char* identify_string(char* input, TokenStream* stream);
+static char* identify_punctuation(char* input, TokenStream* stream);
 
 #endif /* LEXER_H */
