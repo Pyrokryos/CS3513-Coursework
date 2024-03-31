@@ -14,7 +14,7 @@ void parse(TokenStream* stream) {
 }
 
 static void E() {
-    printf("E()\n");
+    printf("E() %s\n", curr->token->value);
 
     if (curr->token->type == IDENTIFIER && strcmp(curr->token->value, "let") == 0) {
         curr = curr->next;
@@ -24,7 +24,7 @@ static void E() {
             curr = curr->next;
             E();
         } else {
-            perror("E: 'in' expected.\n");
+            printf("E: 'in' expected.\n");
             exit(EXIT_FAILURE);
         }
     } else if (curr->token->type == IDENTIFIER && strcmp(curr->token->value, "fn") == 0) {
@@ -54,7 +54,7 @@ static void E() {
 }
 
 static void Ew() {
-    printf("Ew()\n");
+    printf("Ew() %s\n", curr->token->value);
 
     T();
 
@@ -65,18 +65,18 @@ static void Ew() {
 }
 
 static void T() {
-    printf("T()\n");
+    printf("T() %s\n", curr->token->value);
 
     Ta();
 
-    while (curr->token->type == PUNCTUATION && strcmp(curr->token->value, ",")) {
+    while (curr->token->type == PUNCTUATION && strcmp(curr->token->value, ",") == 0) {
         curr = curr->next;
         Ta();
     }
 }
 
 static void Ta() {
-    printf("Ta()\n");
+    printf("Ta() %s\n", curr->token->value);
 
     Tc();
 
@@ -87,7 +87,7 @@ static void Ta() {
 }
 
 static void Tc() {
-    printf("Tc()\n");
+    printf("Tc() %s\n", curr->token->value);
 
     B();
 
@@ -113,7 +113,7 @@ static void Tc() {
 }
 
 static void B() {
-    printf("B()\n");
+    printf("B() %s\n", curr->token->value);
 
     Bt();
 
@@ -124,7 +124,7 @@ static void B() {
 }
 
 static void Bt() {
-    printf("Bt()\n");
+    printf("Bt() %s\n", curr->token->value);
 
     Bs();
 
@@ -135,7 +135,7 @@ static void Bt() {
 }
 
 static void Bs() {
-    printf("Bs()\n");
+    printf("Bs() %s\n", curr->token->value);
 
     if (curr->token->type == IDENTIFIER && strcmp(curr->token->value, "not") == 0) {
         curr = curr->next;
@@ -146,7 +146,7 @@ static void Bs() {
 }
 
 static void Bp() {
-    printf("Bp()\n");
+    printf("Bp() %s\n", curr->token->value);
 
     A();
 
@@ -171,31 +171,38 @@ static void Bp() {
         }
         A();
     } else if (curr->token->type == IDENTIFIER && strcmp(curr->token->value, "eq") == 0) {
+        curr = curr->next;
         A();
     } else if (curr->token->type == IDENTIFIER && strcmp(curr->token->value, "ne") == 0) {
+        curr = curr->next;
         A();
     }
 }
 
 static void A() {
-    printf("A()\n");
+    printf("A() %s\n", curr->token->value);
 
-    int iter = 0;
-    while (
+    if (
         curr->token->type == OPERATOR && strcmp(curr->token->value, "+") == 0 ||
         curr->token->type == OPERATOR && strcmp(curr->token->value, "-") == 0
     ) {
         curr = curr->next;
         At();
-    }
-    if (iter == 0) {
-        perror("A: '+' or '-' expected.\n");
-        exit(EXIT_FAILURE);
+    } else {
+        At();
+
+        while (
+            curr->token->type == OPERATOR && strcmp(curr->token->value, "+") == 0 ||
+            curr->token->type == OPERATOR && strcmp(curr->token->value, "-") == 0
+        ) {
+            curr = curr->next;
+            At();
+        }
     }
 }
 
 static void At() {
-    printf("At()\n");
+    printf("At() %s\n", curr->token->value);
 
     Af();
 
@@ -209,7 +216,7 @@ static void At() {
 }
 
 static void Af() {
-    printf("Af()\n");
+    printf("Af() %s\n", curr->token->value);
 
     Ap();
 
@@ -227,7 +234,7 @@ static void Af() {
 }
 
 static void Ap() {
-    printf("Ap()\n");
+    printf("Ap() %s\n", curr->token->value);
 
     R();
 
@@ -245,7 +252,7 @@ static void Ap() {
 }
 
 static void R() {
-    printf("R()\n");
+    printf("R() %s\n", curr->token->value);
 
     Rn();
 
@@ -260,7 +267,7 @@ static void R() {
 }
 
 static void Rn() {
-    printf("procRN\n");
+    printf("Rn() %s\n", curr->token->value);
 
     if (
         curr->token->type == IDENTIFIER ||
@@ -275,14 +282,14 @@ static void Rn() {
         if (curr->token->type == PUNCTUATION && strcmp(curr->token->value, ")") == 0) {
             curr = curr->next;
         } else {
-            perror("Rn: ')' expected.\n");
+            printf("Rn: ')' expected.\n");
             exit(EXIT_FAILURE);
         }
     }
 }
 
 static void D() {
-    printf("D()\n");
+    printf("D() %s\n", curr->token->value);
 
     Da();
 
@@ -293,7 +300,7 @@ static void D() {
 }
 
 static void Da() {
-    printf("Da()\n");
+    printf("Da() %s\n", curr->token->value);
 
     Dr();
 
@@ -304,7 +311,7 @@ static void Da() {
 }
 
 static void Dr() {
-    printf("Dr()\n");
+    printf("Dr() %s\n", curr->token->value);
 
     if (curr->token->type == IDENTIFIER && strcmp(curr->token->value, "rec") == 0) {
         curr = curr->next;
@@ -313,7 +320,7 @@ static void Dr() {
 }
 
 void Db() {
-    printf("Db()\n");
+    printf("Db() %s\n", curr->token->value);
 
     if (curr->token->type == PUNCTUATION && strcmp(curr->token->value, "(") == 0) {
         curr = curr->next;
@@ -328,9 +335,19 @@ void Db() {
     } else if (curr->token->type == IDENTIFIER) {
         curr = curr->next;
 
-        if (curr->token->type == OPERATOR && strcmp(curr->token->value, ",") == 0) {
-            curr = curr->next;
-            Vb();
+        if (curr->token->type == PUNCTUATION && strcmp(curr->token->value, ",") == 0 ||
+            curr->token->type == OPERATOR && strcmp(curr->token->value, "=") == 0
+        ) {
+            while (curr->token->type == PUNCTUATION && strcmp(curr->token->value, ",") == 0) {
+                curr = curr->next;
+
+                if (curr->token->type == IDENTIFIER) {
+                    curr = curr->next;
+                } else {
+                    perror("Db: '<IDENTIFIER>' expected.\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
 
             if (curr->token->type == OPERATOR && strcmp(curr->token->value, "=") == 0) {
                 curr = curr->next;
@@ -340,38 +357,32 @@ void Db() {
                 exit(EXIT_FAILURE);
             }
         } else {
+            int iter = 0;
+            while (
+                curr->token->type == IDENTIFIER ||
+                curr->token->type == PUNCTUATION && strcmp(curr->token->value, "(") == 0
+            ) {
+                Vb();
+                iter++;
+            }
+            if (iter == 0) {
+                perror("Db: At least one 'Vb' expected.\n");
+                exit(EXIT_FAILURE);
+            }
+
             if (curr->token->type == OPERATOR && strcmp(curr->token->value, "=") == 0) {
                 curr = curr->next;
                 E();
-            }
-            else {
-                int iter = 0;
-                while (
-                    curr->token->type == IDENTIFIER ||
-                    curr->token->type == PUNCTUATION && strcmp(curr->token->value, "(") == 0
-                ) {
-                    Vb();
-                    iter++;
-                }
-                if (iter == 0) {
-                    perror("Db: At least one 'Vb' expected.\n");
-                    exit(EXIT_FAILURE);
-                }
-
-                if (curr->token->type == OPERATOR && strcmp(curr->token->value, "=") == 0) {
-                    curr = curr->next;
-                    E();
-                }  else {
-                    perror("Db: '=' expected.\n");
-                    exit(EXIT_FAILURE);
-                }
+            }  else {
+                perror("Db: '=' expected.\n");
+                exit(EXIT_FAILURE);
             }
         }
     }
 }
 
 static void Vb() {
-    printf("Vb()\n");
+    printf("Vb() %s\n", curr->token->value);
 
     if (curr->token->type == IDENTIFIER) {
         curr = curr->next;
@@ -395,7 +406,7 @@ static void Vb() {
 }
 
 static void Vl() {
-    printf("Vl()\n");
+    printf("Vl() %s\n", curr->token->value);
 
     if (curr->token->type == IDENTIFIER){
         curr = curr->next;
