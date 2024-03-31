@@ -48,12 +48,12 @@ TokenStream* lex(char *input) {
 const char* token_type_to_string(TokenType type) {
     switch (type)
     {
-        case KEYWORD: return "KEYWORD";
         case IDENTIFIER: return "IDENTIFIER";
         case INTEGER: return "INTEGER";
+        case KEYWORD: return "KEYWORD";
         case OPERATOR: return "OPERATOR";
-        case STRING: return "STRING";
         case PUNCTUATION: return "PUNCTUATION";
+        case STRING: return "STRING";
         default:
             fprintf(stderr, "Unknown token type encountered: %d\n", type);
             exit(EXIT_FAILURE);

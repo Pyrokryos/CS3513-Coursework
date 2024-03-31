@@ -17,15 +17,15 @@
 #define KEYWORD_REGEX "(and |aug |dummy |eq |false |fn |ge |gt |in |let |le |ls |ne |nil |not |or |rec |true |where |within )"
 #define IDENTIFIER_REGEX "[a-zA-Z][a-zA-Z0-9_]*"
 #define INTEGER_REGEX "[0-9]+"
-#define OPERATOR_REGEX "[]+-\\*<>&.@/:=~|$!#%^_[{}\"`?]"
+#define OPERATOR_REGEX "(.|(->)|&|>|(>=)|<|(<=)|\\+|-|\\*|/|(\\*\\*)|@|=)"
 #define STRING_REGEX "\"[][.\t.][.\n.][.\\.][.\".]();, a-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\""
 
 typedef LinkedList TokenStream;
 
 typedef enum TokenType {
-    KEYWORD,
     IDENTIFIER,
     INTEGER,
+    KEYWORD,
     OPERATOR,
     PUNCTUATION,
     STRING
