@@ -1,15 +1,15 @@
 #include "../include/lexer.h"
 
 // Declare global variables to hold compiled regex patterns.
-static regex_t* digit_regex = NULL;
-static regex_t* letter_regex = NULL;
-static regex_t* punctuation_regex = NULL;
-static regex_t* whitespace_regex = NULL;
-static regex_t* comment_regex = NULL;
-static regex_t* identifier_regex = NULL;
-static regex_t* integer_regex = NULL;
-static regex_t* operator_regex = NULL;
-static regex_t* string_regex = NULL;
+static regex_t* digit_regex;
+static regex_t* letter_regex;
+static regex_t* punctuation_regex;
+static regex_t* whitespace_regex;
+static regex_t* comment_regex;
+static regex_t* identifier_regex;
+static regex_t* integer_regex;
+static regex_t* operator_regex;
+static regex_t* string_regex;
 
 
 TokenStream* lex(char *input) {
@@ -38,7 +38,7 @@ TokenStream* lex(char *input) {
 }
 
 
-const char* token_type_to_string(enum TokenType type) {
+const char* token_type_to_string(TokenType type) {
     switch (type)
     {
         case IDENTIFIER: return "IDENTIFIER";
@@ -374,7 +374,7 @@ static char* identify_identifier(char* input, TokenStream* stream) {
         strncpy(value, input, match.rm_eo - match.rm_so);
         value[match.rm_eo - match.rm_so] = '\0';
 
-        struct Token* token = (struct Token *)malloc(sizeof(struct Token));
+        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
@@ -441,7 +441,7 @@ static char* identify_integer(char* input, TokenStream* stream) {
         strncpy(value, input, match.rm_eo - match.rm_so);
         value[match.rm_eo - match.rm_so] = '\0';
 
-        struct Token* token = (struct Token *)malloc(sizeof(struct Token));
+        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
@@ -508,7 +508,7 @@ static char* identify_operator(char* input, TokenStream* stream) {
         strncpy(value, input, match.rm_eo - match.rm_so);
         value[match.rm_eo - match.rm_so] = '\0';
 
-        struct Token* token = (struct Token *)malloc(sizeof(struct Token));
+        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
@@ -575,7 +575,7 @@ static char* identify_punctuation(char* input, TokenStream* stream) {
         strncpy(value, input, match.rm_eo - match.rm_so);
         value[match.rm_eo - match.rm_so] = '\0';
 
-        struct Token* token = (struct Token *)malloc(sizeof(struct Token));
+        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
@@ -642,7 +642,7 @@ static char* identify_string(char* input, TokenStream* stream) {
         strncpy(value, input, match.rm_eo - match.rm_so);
         value[match.rm_eo - match.rm_so] = '\0';
 
-        struct Token* token = (struct Token *)malloc(sizeof(struct Token));
+        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
@@ -674,13 +674,39 @@ static char* identify_string(char* input, TokenStream* stream) {
 
 
 static void free_regex() {
-    regfree(digit_regex);
-    regfree(letter_regex);
-    regfree(punctuation_regex);
-    regfree(whitespace_regex);
-    regfree(comment_regex);
-    regfree(identifier_regex);
-    regfree(integer_regex);
-    regfree(operator_regex);
-    regfree(string_regex);
+    if (digit_regex != NULL) {
+        regfree(digit_regex);
+    }
+
+    if (letter_regex != NULL) {
+        regfree(letter_regex);
+    }
+
+    if (punctuation_regex != NULL) {
+        regfree(punctuation_regex);
+    }
+
+    if (whitespace_regex != NULL) {
+        regfree(whitespace_regex);
+    }
+
+    if (comment_regex != NULL) {
+        regfree(comment_regex);
+    }
+
+    if (identifier_regex != NULL) {
+        regfree(identifier_regex);
+    }
+
+    if (integer_regex != NULL) {
+        regfree(integer_regex);
+    }
+
+    if (operator_regex != NULL) {
+        regfree(operator_regex);
+    }
+
+    if (string_regex != NULL) {
+        regfree(string_regex);
+    }
 };

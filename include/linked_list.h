@@ -2,26 +2,25 @@
 #define LINKED_LIST_H
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 
-struct Token;
+typedef struct Token Token;
 
-struct Node {
+typedef struct Node {
     struct Token *token;
     struct Node *next;
-};
+} Node;
 
-struct LinkedList {
-    struct Node *head;
-    struct Node *tail;
+typedef struct LinkedList {
+    Node *head;
+    Node *tail;
     size_t size;
-};
+} LinkedList;
 
-struct LinkedList* create_linked_list();
+LinkedList* create_linked_list();
 
-void insert_at_end(struct LinkedList* list, struct Token *token);
+void insert_at_end(LinkedList* list, Token *token);
 
-void display_list(struct LinkedList* list);
+void display_list(LinkedList* list);
 
 #endif // LINKED_LIST_H

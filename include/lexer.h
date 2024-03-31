@@ -19,24 +19,24 @@
 #define OPERATOR_REGEX "[]+-\\*<>&.@/:=~|$!#%^_[{}\"`?]"
 #define STRING_REGEX "\"[][.\t.][.\n.][.\\.][.\".]();, a-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\""
 
-typedef struct LinkedList TokenStream;
+typedef LinkedList TokenStream;
 
-enum TokenType {
+typedef enum TokenType {
     IDENTIFIER,
     INTEGER,
     OPERATOR,
     PUNCTUATION,
     STRING
-};
+} TokenType;
 
-struct Token {
+typedef struct Token {
     char* value;
-    enum TokenType type;
-};
+    TokenType type;
+} Token;
 
 TokenStream* lex(char *input);
 
-const char* token_type_to_string(enum TokenType type);
+const char* token_type_to_string(TokenType type);
 
 static bool is_digit(char* input);
 static bool is_letter(char* input);

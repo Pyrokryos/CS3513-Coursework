@@ -2,8 +2,8 @@
 #include "../include/linked_list.h"
 
 // Create a new linked list.
-struct LinkedList* create_linked_list() {
-    struct LinkedList *list = (struct LinkedList *)malloc(sizeof(struct LinkedList));
+LinkedList* create_linked_list() {
+    LinkedList *list = (LinkedList *)malloc(sizeof(LinkedList));
     if (list == NULL)
     {
         perror("Failed to allocate memory for linked list.");
@@ -18,8 +18,8 @@ struct LinkedList* create_linked_list() {
 }
 
 // Insert a token at the end of the linked list.
-void insert_at_end(struct LinkedList* list, struct Token *token) {
-    struct Node *node = (struct Node *)malloc(sizeof(struct Node));
+void insert_at_end(LinkedList* list, struct Token *token) {
+    Node *node = (Node *)malloc(sizeof(Node));
     if (node == NULL)
     {
         perror("Failed to allocate memory for new node.");
@@ -43,8 +43,8 @@ void insert_at_end(struct LinkedList* list, struct Token *token) {
     list->size++;
 }
 
-void display_list(struct LinkedList* list) {
-    struct Node *current = list->head;
+void display_list(LinkedList* list) {
+    Node *current = list->head;
 
     printf("\n<Token Type, Token Value>\n\n");
     while (current != NULL)
@@ -52,4 +52,5 @@ void display_list(struct LinkedList* list) {
         printf("<%s %s>\n", token_type_to_string(current->token->type), current->token->value);
         current = current->next;
     }
+    printf("\n");
 }
