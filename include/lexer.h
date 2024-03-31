@@ -14,6 +14,7 @@
 #define PUNCTUATION_REGEX "[();,]"
 #define WHITESPACE_REGEX "[ \t\n]+"
 #define COMMENT_REGEX "//[]'();,\\ \ta-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\n"
+#define KEYWORD_REGEX "(and |aug |dummy |eq |false |fn |ge |gt |in |let |le |ls |ne |nil |not |or |rec |true |where |within )"
 #define IDENTIFIER_REGEX "[a-zA-Z][a-zA-Z0-9_]*"
 #define INTEGER_REGEX "[0-9]+"
 #define OPERATOR_REGEX "[]+-\\*<>&.@/:=~|$!#%^_[{}\"`?]"
@@ -22,6 +23,7 @@
 typedef LinkedList TokenStream;
 
 typedef enum TokenType {
+    KEYWORD,
     IDENTIFIER,
     INTEGER,
     OPERATOR,
@@ -46,6 +48,7 @@ static bool is_whitespace(char* input);
 static char* ignore_comment(char* input);
 static char* ignore_whitespace(char* input);
 
+static char* identify_keyword(char* input, TokenStream* stream);
 static char* identify_identifier(char* input, TokenStream* stream);
 static char* identify_integer(char* input, TokenStream* stream);
 static char* identify_operator(char* input, TokenStream* stream);

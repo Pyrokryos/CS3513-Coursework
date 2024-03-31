@@ -13,6 +13,7 @@ void parse(TokenStream* stream) {
     }
 }
 
+// E -> ’let’ D ’in’ E | ’fn’ Vb+ ’.’ E | Ew
 static void E() {
     printf("E() %s\n", curr->token->value);
 
@@ -24,7 +25,7 @@ static void E() {
             curr = curr->next;
             E();
         } else {
-            printf("E: 'in' expected.\n");
+            perror("E: 'in' expected.\n");
             exit(EXIT_FAILURE);
         }
     } else if (curr->token->type == IDENTIFIER && strcmp(curr->token->value, "fn") == 0) {
@@ -53,6 +54,7 @@ static void E() {
     }
 }
 
+// Ew ->  T ’where’ Dr | T
 static void Ew() {
     printf("Ew() %s\n", curr->token->value);
 
@@ -64,6 +66,7 @@ static void Ew() {
     }
 }
 
+// T -> Ta ( ’,’ Ta )+ | Ta
 static void T() {
     printf("T() %s\n", curr->token->value);
 
@@ -75,6 +78,7 @@ static void T() {
     }
 }
 
+// Ta -> Ta ’aug’ Tc | Tc
 static void Ta() {
     printf("Ta() %s\n", curr->token->value);
 
@@ -86,6 +90,7 @@ static void Ta() {
     }
 }
 
+// Tc -> B ’->’ Tc ’|’ Tc | B
 static void Tc() {
     printf("Tc() %s\n", curr->token->value);
 
@@ -112,6 +117,7 @@ static void Tc() {
     }
 }
 
+// B -> B ’or’ Bt | Bt
 static void B() {
     printf("B() %s\n", curr->token->value);
 
@@ -123,6 +129,7 @@ static void B() {
     }
 }
 
+// Bt -> Bt ’&’ Bs | Bs
 static void Bt() {
     printf("Bt() %s\n", curr->token->value);
 
@@ -134,6 +141,7 @@ static void Bt() {
     }
 }
 
+// Bs -> ’not’ Bp | Bp
 static void Bs() {
     printf("Bs() %s\n", curr->token->value);
 
@@ -145,6 +153,15 @@ static void Bs() {
     }
 }
 
+/*
+    Bp  -> A (’gr’ | ’>’ ) A
+        -> A (’ge’ | ’>=’) A
+        -> A (’ls’ | ’<’ ) A
+        -> A (’le’ | ’<=’) A
+        -> A ’eq’ A
+        -> A ’ne’ A
+        -> A ;
+*/
 static void Bp() {
     printf("Bp() %s\n", curr->token->value);
 
@@ -179,6 +196,13 @@ static void Bp() {
     }
 }
 
+/*
+    A   -> A ’+’ At
+        -> A ’-’ At
+        -> ’+’ At
+        -> ’-’ At
+        -> At ;
+*/
 static void A() {
     printf("A() %s\n", curr->token->value);
 
@@ -190,17 +214,22 @@ static void A() {
         At();
     } else {
         At();
+    }
 
-        while (
-            curr->token->type == OPERATOR && strcmp(curr->token->value, "+") == 0 ||
-            curr->token->type == OPERATOR && strcmp(curr->token->value, "-") == 0
-        ) {
-            curr = curr->next;
-            At();
-        }
+    while (
+        curr->token->type == OPERATOR && strcmp(curr->token->value, "+") == 0 ||
+        curr->token->type == OPERATOR && strcmp(curr->token->value, "-") == 0
+    ) {
+        curr = curr->next;
+        At();
     }
 }
 
+/*
+    At  -> At ’*’ Af
+        -> At ’/’  Af
+        -> Af ;
+*/
 static void At() {
     printf("At() %s\n", curr->token->value);
 
@@ -215,6 +244,10 @@ static void At() {
     }
 }
 
+/*
+    Af -> Ap ’**’ Af
+       -> Ap ;
+*/
 static void Af() {
     printf("Af() %s\n", curr->token->value);
 
@@ -233,6 +266,10 @@ static void Af() {
     }
 }
 
+/*
+    Ap -> Ap ’@’ ’<IDENTIFIER>’ R
+       -> R ;
+*/
 static void Ap() {
     printf("Ap() %s\n", curr->token->value);
 
@@ -251,6 +288,10 @@ static void Ap() {
     }
 }
 
+/*
+    R -> R Rn
+      -> Rn ;
+*/
 static void R() {
     printf("R() %s\n", curr->token->value);
 
@@ -266,6 +307,16 @@ static void R() {
     }
 }
 
+/*
+    Rn -> ’<ID>’
+        -> ’<INT>’
+        -> ’<STR>’
+        -> ’true’
+        -> ’false’
+        -> ’nil’
+        -> ’(’ E ’)’
+        -> ’dummy’
+*/
 static void Rn() {
     printf("Rn() %s\n", curr->token->value);
 
@@ -288,6 +339,10 @@ static void Rn() {
     }
 }
 
+/*
+    D -> Da ’within’ D => ’within’
+      -> Da ;
+*/
 static void D() {
     printf("D() %s\n", curr->token->value);
 
@@ -299,6 +354,10 @@ static void D() {
     }
 }
 
+/*
+    Da -> Dr ( ’and’ Dr )+
+       -> Dr ;
+*/
 static void Da() {
     printf("Da() %s\n", curr->token->value);
 
@@ -310,6 +369,10 @@ static void Da() {
     }
 }
 
+/*
+    Dr -> ’rec’ Db
+        -> Db ;
+*/
 static void Dr() {
     printf("Dr() %s\n", curr->token->value);
 
@@ -319,6 +382,11 @@ static void Dr() {
     Db();
 }
 
+/*
+   Db -> Vl ’=’ E
+      -> ’<IDENTIFIER>’ Vb+ ’=’ E
+      -> ’(’ D ’)’ ;
+*/
 void Db() {
     printf("Db() %s\n", curr->token->value);
 
@@ -381,6 +449,11 @@ void Db() {
     }
 }
 
+/*
+    Vb -> ’<ID>’
+        -> ’(’ Vl ’)’
+        -> ’(’ ’)’
+*/
 static void Vb() {
     printf("Vb() %s\n", curr->token->value);
 
@@ -405,6 +478,9 @@ static void Vb() {
     }
 }
 
+/*
+    Vl -> ’<IDENTIFIER>’ list ’,’
+*/
 static void Vl() {
     printf("Vl() %s\n", curr->token->value);
 

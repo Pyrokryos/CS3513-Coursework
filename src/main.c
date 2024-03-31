@@ -10,6 +10,6 @@ int main()
   TokenStream *stream = lex(ptr);
   display_list(stream);
 
-  parse(stream);
+  // parse(stream);
   return 0;
 }
