@@ -3,14 +3,36 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
+#define MAX_FILE_SIZE 10000
+
 int main()
 {
-  char *ptr = "let Sum(A) = Psum (A,Order A )\n\t\twhere rec Psum (T,N) = N eq 0 -> 0\n\t\t\t| Psum(T,N-1)+T N\nin Print ( Sum (1,2,3,4,5) )";
+    // Open the file for reading.
+    FILE *file = fopen("tests/6.rpal", "r");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file.\n");
+        return 1;
+    }
 
-  TokenStream *stream = lex(ptr);
-  display_list(stream);
+    // Allocate memory to store the file content.
+    char *content = (char *)malloc(MAX_FILE_SIZE * sizeof(char));
+    if (content == NULL) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        fclose(file);
+        return 1;
+    }
 
-  parse(stream);
-  free(stream);
-  return 0;
+    // Read the content of the file into the allocated memory.
+    size_t bytesRead = fread(content, sizeof(char), MAX_FILE_SIZE, file);
+    content[bytesRead] = '\0'; // Null-terminate the string.
+
+    // Close the file.
+    fclose(file);
+
+    TokenStream *stream = lex(content);
+    display_list(stream);
+
+    parse(stream);
+    free(stream);
+    return 0;
 }
