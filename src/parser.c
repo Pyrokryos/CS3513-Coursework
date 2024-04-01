@@ -11,7 +11,7 @@ void parse(TokenStream* stream) {
 
 // E -> ’let’ D ’in’ E | ’fn’ Vb+ ’.’ E | Ew
 static void E() {
-    printf("E() %s\n", curr->token->value);
+    printf("E()\n");
 
     if (
         curr != NULL &&
@@ -66,14 +66,13 @@ static void E() {
             exit(EXIT_FAILURE);
         }
     } else {
-        printf("Hey! I am E. %s\n", curr->token->value);
         Ew();
     }
 }
 
 // Ew ->  T ’where’ Dr | T
 static void Ew() {
-    printf("Ew() %s\n", curr->token->value);
+    printf("Ew()\n");
 
     T();
 
@@ -89,7 +88,7 @@ static void Ew() {
 
 // T -> Ta ( ’,’ Ta )+ | Ta
 static void T() {
-    printf("T() %s\n", curr->token->value);
+    printf("T()\n");
 
     Ta();
 
@@ -101,12 +100,11 @@ static void T() {
         curr = curr->next;
         Ta();
     }
-    printf("Hey! I am T. %d\n", curr == NULL);
 }
 
 // Ta -> Ta ’aug’ Tc | Tc
 static void Ta() {
-    printf("Ta() %s\n", curr->token->value);
+    printf("Ta()\n");
 
     Tc();
 
@@ -118,12 +116,11 @@ static void Ta() {
         curr = curr->next;
         Tc();
     }
-    printf("Hey! I am Ta. %d\n", curr == NULL);
 }
 
 // Tc -> B ’->’ Tc ’|’ Tc | B
 static void Tc() {
-    printf("Tc() %s\n", curr->token->value);
+    printf("Tc()\n");
 
     B();
 
@@ -147,12 +144,11 @@ static void Tc() {
             exit(EXIT_FAILURE);
         }
     }
-    printf("Hey! I am Tc. %d\n", curr == NULL);
 }
 
 // B -> B ’or’ Bt | Bt
 static void B() {
-    printf("B() %s\n", curr->token->value);
+    printf("B()\n");
 
     Bt();
 
@@ -164,13 +160,11 @@ static void B() {
         curr = curr->next;
         Bt();
     }
-
-    printf("Hey! I am B. %d\n", curr == NULL);
 }
 
 // Bt -> Bt ’&’ Bs | Bs
 static void Bt() {
-    printf("Bt() %s\n", curr->token->value);
+    printf("Bt()\n");
 
     Bs();
 
@@ -182,13 +176,11 @@ static void Bt() {
         curr = curr->next;
         Bs();
     }
-
-    printf("Hey! I am Bt. %d\n", curr == NULL);
 }
 
 // Bs -> ’not’ Bp | Bp
 static void Bs() {
-    printf("Bs() %s\n", curr->token->value);
+    printf("Bs()\n");
 
     if (
         curr != NULL &&
@@ -200,8 +192,6 @@ static void Bs() {
     } else {
         Bp();
     }
-
-    printf("Hey! I am Bs. %d\n", curr == NULL);
 }
 
 /*
@@ -214,7 +204,7 @@ static void Bs() {
         -> A ;
 */
 static void Bp() {
-    printf("Bp() %s\n", curr->token->value);
+    printf("Bp()\n");
 
     A();
 
@@ -265,8 +255,6 @@ static void Bp() {
         curr = curr->next;
         A();
     }
-
-    printf("Hey! I am Bp. %d\n", curr == NULL);
 }
 
 /*
@@ -277,7 +265,7 @@ static void Bp() {
         -> At ;
 */
 static void A() {
-    printf("A() %s\n", curr->token->value);
+    printf("A()\n");
 
     if (
         curr != NULL &&
@@ -307,7 +295,6 @@ static void A() {
         curr = curr->next;
         At();
     }
-    printf("Hey! I am A. %d\n", curr == NULL);
 }
 
 /*
@@ -316,7 +303,7 @@ static void A() {
         -> Af ;
 */
 static void At() {
-    printf("At() %s\n", curr->token->value);
+    printf("At()\n");
 
     Af();
 
@@ -329,7 +316,6 @@ static void At() {
         curr = curr->next;
         Af();
     }
-    printf("Hey! I am At. %d\n", curr == NULL);
 }
 
 /*
@@ -337,7 +323,7 @@ static void At() {
        -> Ap ;
 */
 static void Af() {
-    printf("Af() %s\n", curr->token->value);
+    printf("Af()\n");
 
     Ap();
 
@@ -349,7 +335,6 @@ static void Af() {
         curr = curr->next;
         Af();
     }
-    printf("Hey! I am Af. %d\n", curr == NULL);
 }
 
 /*
@@ -357,7 +342,7 @@ static void Af() {
        -> R ;
 */
 static void Ap() {
-    printf("Ap() %s\n", curr->token->value);
+    printf("Ap()\n");
 
     R();
 
@@ -379,7 +364,6 @@ static void Ap() {
             exit(EXIT_FAILURE);
         }
     }
-    printf("Hey! I am Ap. %d\n", curr == NULL);
 }
 
 /*
@@ -387,7 +371,7 @@ static void Ap() {
       -> Rn ;
 */
 static void R() {
-    printf("R() %s\n", curr->token->value);
+    printf("R()\n");
 
     Rn();
 
@@ -407,7 +391,6 @@ static void R() {
     ) {
         Rn();
     }
-    printf("Hey! I am R. %d\n", curr == NULL);
 }
 
 /*
@@ -421,7 +404,7 @@ static void R() {
         -> ’dummy’
 */
 static void Rn() {
-    printf("Rn() %s\n", curr->token->value);
+    printf("Rn()\n");
 
     if (
         curr != NULL && (
@@ -462,7 +445,6 @@ static void Rn() {
             curr->token->type == PUNCTUATION &&
             strncmp(curr->token->value, ")", 1) == 0
         ) {
-            printf("Hey! I am Rn. %s\n", curr->token->value);
             curr = curr->next;
         } else {
             printf("Rn: ')' expected.\n");
@@ -482,7 +464,7 @@ static void Rn() {
       -> Da ;
 */
 static void D() {
-    printf("D() %s\n", curr->token->value);
+    printf("D()\n");
 
     Da();
 
@@ -501,7 +483,7 @@ static void D() {
        -> Dr ;
 */
 static void Da() {
-    printf("Da() %s\n", curr->token->value);
+    printf("Da()\n");
 
     Dr();
 
@@ -520,7 +502,7 @@ static void Da() {
         -> Db ;
 */
 static void Dr() {
-    printf("Dr() %s\n", curr->token->value);
+    printf("Dr()\n");
 
     if (
         curr != NULL &&
@@ -538,7 +520,7 @@ static void Dr() {
       -> ’(’ D ’)’ ;
 */
 void Db() {
-    printf("Db() %s\n", curr->token->value);
+    printf("Db()\n");
 
     if (
         curr != NULL &&
@@ -637,7 +619,7 @@ void Db() {
         -> ’(’ ’)’
 */
 static void Vb() {
-    printf("Vb() %s\n", curr->token->value);
+    printf("Vb()\n");
 
     if (
         curr != NULL &&
@@ -679,7 +661,7 @@ static void Vb() {
     Vl -> ’<IDENTIFIER>’ list ’,’
 */
 static void Vl() {
-    printf("Vl() %s\n", curr->token->value);
+    printf("Vl()\n");
 
     if (
         curr != NULL &&

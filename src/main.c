@@ -3,12 +3,12 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
-#define MAX_FILE_SIZE 10000
+#define MAX_FILE_SIZE 100000
 
 int main()
 {
     // Open the file for reading.
-    FILE *file = fopen("tests/6.rpal", "r");
+    FILE *file = fopen("tests/1.rpal", "r");
     if (file == NULL) {
         fprintf(stderr, "Error opening file.\n");
         return 1;
