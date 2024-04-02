@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/linked_list.h"
+#include "linked_list.h"
 
 #define DIGIT_REGEX "[0-9]"
 #define LETTER_REGEX "[a-zA-Z]"

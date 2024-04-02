@@ -10,7 +10,11 @@ typedef struct Vertex {
 } Vertex;
 
 Vertex* create_vertex(char* data);
+
 void add_left_child(Vertex* parent, Vertex* left_child);
+Vertex* get_left_child(Vertex* parent);
+
 void add_right_sibling(Vertex* vertex, Vertex* right_sibling);
+Vertex* get_right_sibling(Vertex* vertex);
 
 #endif

@@ -5,8 +5,12 @@
 #include <string.h>
 
 #include "lexer.h"
+#include "linked_list.h"
+#include "queue.h"
+#include "tree.h"
 
-typedef struct Node Node;
+static Node* curr;
+static Queue* queue;
 
 void parse(TokenStream* stream);
 
