@@ -1,31 +1,46 @@
-CC = gcc                  # Compiler
-CFLAGS = -Wall -Wextra -g # Compiler flags
-TARGET = myrpal           # Target executable
-INCLUDE_DIR = include     # Include directory
-SRC_DIR = src             # Source directory
-BUILD_DIR = build         # Build directory
+# Compiler
+CC = gcc
 
-SRCS = $(wildcard $(SRC_DIR)/*.c)              # Get all source files.
-OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o) # Generate object file names.
+# Compiler flags
+CFLAGS = -Wall -Wextra -g
 
-# Rule to compile each source file into object files.
+# Target executable
+TARGET = myrpal
+
+# Source directory
+SRC_DIR = src
+
+# Include directory
+INCLUDE_DIR = include
+
+# Build directory
+BUILD_DIR = build
+
+# Get all source files.
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+
+# Generate object file names.
+OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+
+# Rule to compile source files into object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 
-# Rule to build the target executable
+# Rule to link object files into the target executable
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -g $^ -o $@
 
-.PHONY: clean debug run # Phony targets
+# Phony targets
+.PHONY: clean run debug
 
-# Target to clean the build artifacts.
-clean:
-	rm -f $(BUILD_DIR)/*.o $(TARGET)
+# Target to run the executable
+run: $(TARGET)
+	./$(TARGET)
 
-# Target to run the executable in debug mode using gdb.
+# Target to run the executable in debug mode using gdb
 debug: $(TARGET)
 	gdb ./$(TARGET)
 
-# Target to run the executable.
-run: $(TARGET)
-	./$(TARGET)
+# Target to clean the build artifacts
+clean:
+	rm -f $(BUILD_DIR)/*.o $(TARGET)
