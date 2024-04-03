@@ -10,8 +10,6 @@ void parse(TokenStream* stream) {
 
 // E -> ’let’ D ’in’ E | ’fn’ Vb+ ’.’ E | Ew
 static void E() {
-    // printf("E()\n");
-
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
@@ -24,6 +22,7 @@ static void E() {
 
         add_left_child(let, queue->head->vertex);
         dequeue(queue);
+        printf("E() -> D() %zu\n", get_size(queue));
 
         if (
             curr != NULL &&
@@ -35,6 +34,7 @@ static void E() {
 
             add_right_sibling(get_left_child(let), queue->head->vertex);
             dequeue(queue);
+            printf("E() -> D() -> E() %zu\n", get_size(queue));
 
             enqueue(queue, let);
         } else {
@@ -50,7 +50,7 @@ static void E() {
 
         curr = curr->next;
 
-        int iter = 0;
+        size_t iter = 0;
         Vertex* temp = lambda;
         while (
             curr != NULL &&
@@ -59,8 +59,13 @@ static void E() {
         ) {
             Vb();
 
-            add_left_child(temp, queue->head->vertex);
+            if (iter == 0) {
+                add_left_child(temp, queue->head->vertex);
+            } else {
+                add_right_sibling(temp, queue->head->vertex);
+            }
             temp = dequeue(queue);
+            printf("E() -> Vb() * %zu %zu\n", iter, get_size(queue));
 
             iter++;
         }
@@ -77,8 +82,9 @@ static void E() {
             curr = curr->next;
             E();
 
-            add_left_child(temp, queue->head->vertex);
+            add_right_sibling(temp, queue->head->vertex);
             dequeue(queue);
+            printf("E() -> Vb() * %zu -> E() %zu\n", iter, get_size(queue));
 
             enqueue(queue, lambda);
         } else {
@@ -92,8 +98,6 @@ static void E() {
 
 // Ew ->  T ’where’ Dr | T
 static void Ew() {
-    printf("Ew()\n");
-
     T();
 
     if (
@@ -105,12 +109,14 @@ static void Ew() {
 
         add_left_child(where, queue->head->vertex);
         dequeue(queue);
+        printf("Ew() -> T() %zu\n", get_size(queue));
 
         curr = curr->next;
         Dr();
 
         add_right_sibling(get_left_child(where), queue->head->vertex);
         dequeue(queue);
+        printf("Ew() -> T() -> Dr() %zu\n", get_size(queue));
 
         enqueue(queue, where);
     }
@@ -118,11 +124,9 @@ static void Ew() {
 
 // T -> Ta ( ’,’ Ta )+ | Ta
 static void T() {
-    printf("T()\n");
-
     Ta();
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* tau;
     Vertex* temp;
     while (
@@ -135,6 +139,7 @@ static void T() {
 
             add_left_child(tau, queue->head->vertex);
             temp = dequeue(queue);
+            printf("T() -> Ta() %zu\n", get_size(queue));
         }
 
         curr = curr->next;
@@ -142,20 +147,20 @@ static void T() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-
-        enqueue(queue, tau);
+        printf("T() -> Ta() * %zu %zu\n", iter + 1, get_size(queue));
 
         iter++;
+    }
+    if (iter > 0) {
+        enqueue(queue, tau);
     }
 }
 
 // Ta -> Ta ’aug’ Tc | Tc
 static void Ta() {
-    printf("Ta()\n");
-
     Tc();
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* aug;
     Vertex* temp;
     while (
@@ -163,18 +168,17 @@ static void Ta() {
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "aug", 3) == 0
     ) {
-        if (iter == 0) {
-            aug = create_vertex("aug");
+        aug = create_vertex("aug");
 
-            add_left_child(aug, queue->head->vertex);
-            temp = dequeue(queue);
-        }
+        add_left_child(aug, queue->head->vertex);
+        temp = dequeue(queue);
 
         curr = curr->next;
         Tc();
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
+        printf("Ta() -> Tc() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, aug);
 
@@ -184,8 +188,6 @@ static void Ta() {
 
 // Tc -> B ’->’ Tc ’|’ Tc | B
 static void Tc() {
-    printf("Tc()\n");
-
     B();
 
     if (
@@ -197,12 +199,14 @@ static void Tc() {
 
         add_left_child(arrow, queue->head->vertex);
         dequeue(queue);
+        printf("Tc() -> B() %zu\n", get_size(queue));
 
         curr = curr->next;
         Tc();
 
         add_right_sibling(get_left_child(arrow), queue->head->vertex);
         Vertex* temp = dequeue(queue);
+        printf("Tc() -> B() -> Tc() %zu\n", get_size(queue));
 
         if (
             curr != NULL &&
@@ -214,6 +218,7 @@ static void Tc() {
 
             add_right_sibling(temp, queue->head->vertex);
             dequeue(queue);
+            printf("Tc() -> B() -> Tc() -> Tc() %zu\n", get_size(queue));
 
             enqueue(queue, arrow);
         } else {
@@ -225,11 +230,9 @@ static void Tc() {
 
 // B -> B ’or’ Bt | Bt
 static void B() {
-    printf("B()\n");
-
     Bt();
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* or;
     Vertex* temp;
     while (
@@ -237,18 +240,17 @@ static void B() {
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "or", 2) == 0
     ) {
-        if (iter == 0) {
-            or = create_vertex("or");
+        or = create_vertex("or");
 
-            add_left_child(or, queue->head->vertex);
-            temp = dequeue(queue);
-        }
+        add_left_child(or, queue->head->vertex);
+        temp = dequeue(queue);
 
         curr = curr->next;
         Bt();
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
+        printf("B() -> Bt() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, or);
 
@@ -258,30 +260,27 @@ static void B() {
 
 // Bt -> Bt ’&’ Bs | Bs
 static void Bt() {
-    printf("Bt()\n");
-
     Bs();
 
     int iter = 0;
-    Vertex* temp;
     Vertex* and;
+    Vertex* temp;
     while (
         curr != NULL &&
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "&", 1) == 0
     ) {
-        if (iter == 0) {
-            and = create_vertex("&");
+        and = create_vertex("&");
 
-            add_left_child(and, queue->head->vertex);
-            temp = dequeue(queue);
-        }
+        add_left_child(and, queue->head->vertex);
+        temp = dequeue(queue);
 
         curr = curr->next;
         Bs();
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
+        printf("Bt() -> Bs() * %d %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, and);
 
@@ -291,8 +290,6 @@ static void Bt() {
 
 // Bs -> ’not’ Bp | Bp
 static void Bs() {
-    printf("Bs()\n");
-
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
@@ -305,6 +302,7 @@ static void Bs() {
 
         add_left_child(not, queue->head->vertex);
         dequeue(queue);
+        printf("Bs() -> Bp() %zu\n", get_size(queue));
 
         enqueue(queue, not);
     } else {
@@ -322,8 +320,6 @@ static void Bs() {
         -> A ;
 */
 static void Bp() {
-    printf("Bp()\n");
-
     A();
 
     if (
@@ -336,12 +332,14 @@ static void Bp() {
 
         add_left_child(gr, queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(gr), queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, gr);
     } else if (
@@ -354,12 +352,16 @@ static void Bp() {
 
         add_left_child(ge, queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(ge), queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
+
+        enqueue(queue, ge);
     } else if (
         curr != NULL && (
             curr->token->type == KEYWORD && strncmp(curr->token->value, "ls", 2) == 0 ||
@@ -370,12 +372,14 @@ static void Bp() {
 
         add_left_child(ls, queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(ls), queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, ls);
     } else if (
@@ -388,12 +392,14 @@ static void Bp() {
 
         add_left_child(le, queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(le), queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, le);
     } else if (
@@ -405,12 +411,14 @@ static void Bp() {
 
         add_left_child(eq, queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(eq), queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, eq);
     } else if (
@@ -422,12 +430,14 @@ static void Bp() {
 
         add_left_child(ne, queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(ne), queue->head->vertex);
         dequeue(queue);
+        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, ne);
     }
@@ -441,8 +451,6 @@ static void Bp() {
         -> At ;
 */
 static void A() {
-    printf("A()\n");
-
     if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
@@ -456,20 +464,21 @@ static void A() {
         strncmp(curr->token->value, "-", 1) == 0 &&
         strncmp(curr->token->value, "->", 2) != 0
     ) {
-        Vertex* minus = create_vertex("-");
+        Vertex* neg = create_vertex("neg");
 
         curr = curr->next;
         At();
 
-        add_left_child(minus, queue->head->vertex);
+        add_left_child(neg, queue->head->vertex);
         dequeue(queue);
+        printf("A() -> At() %zu\n", get_size(queue));
 
-        enqueue(queue, minus);
+        enqueue(queue, neg);
     } else {
         At();
     }
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* add_sub;
     Vertex* temp;
     while (
@@ -478,24 +487,17 @@ static void A() {
             curr->token->type == OPERATOR && strncmp(curr->token->value, "-", 1) == 0 && strncmp(curr->token->value, "->", 2) != 0
         )
     ) {
-        if (iter == 0) {
-            add_sub = create_vertex(curr->token->value);
+        add_sub = create_vertex(curr->token->value);
 
-            add_left_child(add_sub, queue->head->vertex);
-            dequeue(queue);
+        add_left_child(add_sub, queue->head->vertex);
+        dequeue(queue);
 
-            curr = curr->next;
-            At();
+        curr = curr->next;
+        At();
 
-            add_right_sibling(get_left_child(add_sub), queue->head->vertex);
-            temp = dequeue(queue);
-        } else {
-            curr = curr->next;
-            At();
-
-            add_right_sibling(temp, queue->head->vertex);
-            temp = dequeue(queue);
-        }
+        add_right_sibling(get_left_child(add_sub), queue->head->vertex);
+        temp = dequeue(queue);
+        printf("A() -> At() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, add_sub);
 
@@ -509,11 +511,9 @@ static void A() {
         -> Af ;
 */
 static void At() {
-    printf("At()\n");
-
     Af();
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* mul_div;
     Vertex* temp;
     while (
@@ -522,18 +522,17 @@ static void At() {
             curr->token->type == OPERATOR && strncmp(curr->token->value, "/", 1) == 0
         )
     ) {
-        if (iter == 0) {
-            mul_div = create_vertex(curr->token->value);
+        mul_div = create_vertex(curr->token->value);
 
-            add_left_child(mul_div, queue->head->vertex);
-            temp = dequeue(queue);
-        }
+        add_left_child(mul_div, queue->head->vertex);
+        temp = dequeue(queue);
 
         curr = curr->next;
         Af();
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
+        printf("At() -> Af() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, mul_div);
     }
@@ -544,8 +543,6 @@ static void At() {
        -> Ap ;
 */
 static void Af() {
-    printf("Af()\n");
-
     Ap();
 
     if (
@@ -557,12 +554,14 @@ static void Af() {
 
         add_left_child(power, queue->head->vertex);
         dequeue(queue);
+        printf("Af() -> Ap() %zu\n", get_size(queue));
 
         curr = curr->next;
         Af();
 
         add_right_sibling(get_left_child(power), queue->head->vertex);
         dequeue(queue);
+        printf("Af() -> Ap() -> Af() %zu\n", get_size(queue));
 
         enqueue(queue, power);
     }
@@ -573,11 +572,9 @@ static void Af() {
        -> R ;
 */
 static void Ap() {
-    printf("Ap()\n");
-
     R();
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* at;
     Vertex* temp;
     while (
@@ -585,12 +582,10 @@ static void Ap() {
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "@", 1) == 0
     ) {
-        if (iter == 0) {
-            at = create_vertex("@");
+        at = create_vertex("@");
 
-            add_left_child(at, queue->head->vertex);
-            temp = dequeue(queue);
-        }
+        add_left_child(at, queue->head->vertex);
+        temp = dequeue(queue);
 
         curr = curr->next;
 
@@ -611,6 +606,7 @@ static void Ap() {
 
             add_right_sibling(temp, queue->head->vertex);
             temp = dequeue(queue);
+            printf("Ap() -> R() * %zu %zu\n", iter + 1, get_size(queue));
 
             enqueue(queue, at);
         } else {
@@ -625,11 +621,9 @@ static void Ap() {
       -> Rn ;
 */
 static void R() {
-    printf("R()\n");
-
     Rn();
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* gamma;
     Vertex* temp;
     while (
@@ -646,19 +640,17 @@ static void R() {
             curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
         )
     ) {
-        if (iter == 0) {
-            gamma = create_vertex("gamma");
+        gamma = create_vertex("gamma");
 
-            add_left_child(gamma, queue->head->vertex);
-            temp = dequeue(queue);
-        }
+        add_left_child(gamma, queue->head->vertex);
+        temp = dequeue(queue);
 
         Rn();
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-    }
-    if (iter > 0) {
+        printf("R() -> Rn() * %zu %zu\n", iter + 1, get_size(queue));
+
         enqueue(queue, gamma);
     }
 }
@@ -674,8 +666,6 @@ static void R() {
         -> ’dummy’
 */
 static void Rn() {
-    printf("Rn()\n");
-
     if (curr != NULL && (curr->token->type == IDENTIFIER)) {
         char* data = (char*) malloc(sizeof(char));
         sprintf(data, "<ID:%s>", curr->token->value);
@@ -769,8 +759,6 @@ static void Rn() {
       -> Da ;
 */
 static void D() {
-    printf("D()\n");
-
     Da();
 
     if (
@@ -782,12 +770,14 @@ static void D() {
 
         add_left_child(within, queue->head->vertex);
         dequeue(queue);
+        printf("D() -> Da() %zu\n", get_size(queue));
 
         curr = curr->next;
         Da();
 
         add_right_sibling(get_left_child(within), queue->head->vertex);
         dequeue(queue);
+        printf("D() -> Da() -> D() %zu\n", get_size(queue));
 
         enqueue(queue, within);
     }
@@ -798,11 +788,9 @@ static void D() {
        -> Dr ;
 */
 static void Da() {
-    printf("Da()\n");
-
     Dr();
 
-    int iter = 0;
+    size_t iter = 0;
     Vertex* and;
     Vertex* temp;
     while (
@@ -815,6 +803,7 @@ static void Da() {
 
             add_left_child(and, queue->head->vertex);
             temp = dequeue(queue);
+            printf("Da() -> Dr() %zu\n", get_size(queue));
         }
 
         curr = curr->next;
@@ -822,6 +811,7 @@ static void Da() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
+        printf("Da() -> Dr() * %zu %zu\n", iter + 1, get_size(queue));
     }
     if (iter > 0) {
         enqueue(queue, and);
@@ -833,8 +823,6 @@ static void Da() {
         -> Db ;
 */
 static void Dr() {
-    printf("Dr()\n");
-
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
@@ -847,6 +835,7 @@ static void Dr() {
 
         add_left_child(rec, queue->head->vertex);
         dequeue(queue);
+        printf("Dr() -> Db() %zu\n", get_size(queue));
 
         enqueue(queue, rec);
     } else {
@@ -989,6 +978,13 @@ static void Vb() {
         curr != NULL &&
         curr->token->type == IDENTIFIER
     ) {
+        char* data = (char*) malloc(sizeof(char));
+        sprintf(data, "<ID:%s>", curr->token->value);
+
+        Vertex* identifier = create_vertex(data);
+
+        enqueue(queue, identifier);
+
         curr = curr->next;
     } else if (
         curr != NULL &&
@@ -1002,6 +998,10 @@ static void Vb() {
             curr->token->type == PUNCTUATION &&
             strncmp(curr->token->value, ")", 1) == 0
         ) {
+            Vertex* bracket = create_vertex("()");
+
+            enqueue(queue, bracket);
+
             curr = curr->next;
         }
         else {
@@ -1031,8 +1031,19 @@ static void Vl() {
         curr != NULL &&
         curr->token->type == IDENTIFIER
     ) {
+        Vertex* comma = create_vertex(",");
+
+        char* data = (char*) malloc(sizeof(char));
+        sprintf(data, "<ID:%s>", curr->token->value);
+
+        Vertex* identifier = create_vertex(data);
+
+        add_left_child(comma, identifier);
+
         curr = curr->next;
 
+        size_t iter = 0;
+        Vertex* temp = identifier;
         while (
             curr != NULL &&
             curr->token->type == PUNCTUATION &&
@@ -1044,11 +1055,24 @@ static void Vl() {
                 curr != NULL &&
                 curr->token->type == IDENTIFIER
             ) {
+                char* data = (char*) malloc(sizeof(char));
+                sprintf(data, "<ID:%s>", curr->token->value);
+
+                Vertex* identifier = create_vertex(data);
+
+                add_right_sibling(temp, identifier);
+                temp = identifier;
+
                 curr = curr->next;
+
+                iter++;
             } else {
                 printf("Vl: <Identifier> expected.\n");
                 exit(EXIT_FAILURE);
             }
+        }
+        if (iter > 0) {
+            enqueue(queue, comma);
         }
     }
     else {
