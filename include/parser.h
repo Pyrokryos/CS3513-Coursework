@@ -12,7 +12,8 @@
 static Node* curr;
 static Queue* queue;
 
-void parse(TokenStream* stream);
+Vertex* parse(TokenStream* stream);
+void AST(Vertex* vertex);
 
 /* Expressions */
 static void E();

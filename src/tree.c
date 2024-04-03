@@ -26,3 +26,18 @@ void add_right_sibling(Vertex* vertex, Vertex* right_sibling) {
 Vertex* get_right_sibling(Vertex* vertex) {
     return vertex->right_sibling;
 }
+
+void depth_first_left_to_right_traversal(Vertex* vertex, size_t depth) {
+    if (vertex == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < depth; i++) {
+        printf(".");
+    }
+    printf("%s\n", vertex->data);
+
+    depth_first_left_to_right_traversal(vertex->left_child, depth + 1);
+    depth_first_left_to_right_traversal(vertex->right_sibling, depth);
+}
+

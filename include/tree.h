@@ -1,6 +1,7 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct Vertex {
@@ -16,5 +17,7 @@ Vertex* get_left_child(Vertex* parent);
 
 void add_right_sibling(Vertex* vertex, Vertex* right_sibling);
 Vertex* get_right_sibling(Vertex* vertex);
+
+void depth_first_left_to_right_traversal(Vertex* vertex, size_t depth);
 
 #endif

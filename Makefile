@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-TARGET = rpal_interpreter
+TARGET = myrpal
 SRC_DIR = src
 INCLUDE_DIR = include
 BUILD_DIR = build

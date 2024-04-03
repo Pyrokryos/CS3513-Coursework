@@ -46,11 +46,9 @@ void insert_at_end(LinkedList* list, struct Token *token) {
 void display_list(LinkedList* list) {
     Node *current = list->head;
 
-    printf("\n<Token Type, Token Value>\n\n");
     while (current != NULL)
     {
         printf("<%s %s>\n", token_type_to_string(current->token->type), current->token->value);
         current = current->next;
     }
-    printf("\n");
 }

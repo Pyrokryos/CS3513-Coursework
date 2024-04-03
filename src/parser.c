@@ -1,11 +1,16 @@
 #include "../include/parser.h"
 
-void parse(TokenStream* stream) {
+Vertex* parse(TokenStream* stream) {
     curr = stream->head;
     queue = create_empty_queue();
 
     E();
-    printf("Parsing complete!\n");
+
+    return queue->head->vertex;
+}
+
+void AST(Vertex* vertex) {
+    depth_first_left_to_right_traversal(vertex, 0);
 }
 
 // E -> ’let’ D ’in’ E | ’fn’ Vb+ ’.’ E | Ew

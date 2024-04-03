@@ -1,14 +1,17 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
-
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
 #define MAX_FILE_SIZE 100000
 
-int main()
-{
+int main(int argc, char *argv[]) {
+    char *filePath = (argc > 2) ? argv[2] : "tests/1.rpal";
+
     // Open the file for reading.
-    FILE *file = fopen("tests/1.rpal", "r");
+    FILE *file = fopen(filePath, "r");
     if (file == NULL) {
         fprintf(stderr, "Error opening file.\n");
         return 1;
@@ -29,10 +32,18 @@ int main()
     // Close the file.
     fclose(file);
 
-    TokenStream *stream = lex(content);
-    display_list(stream);
+    if (strcmp(argv[1], "-lex") == 0) {
+        TokenStream *stream = lex(content);
+        display_list(stream);
+        free(stream);
+    } else if (strcmp(argv[1], "-ast") == 0) {
+        TokenStream *stream = lex(content);
+        AST(parse(stream));
+        free(stream);
+    } else {
+        printf("Invalid argument.\n");
+    }
 
-    parse(stream);
-    free(stream);
+    free(content);
     return 0;
 }
