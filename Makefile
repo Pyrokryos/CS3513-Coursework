@@ -12,12 +12,15 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) -g $^ -o $@
 
-.PHONY: clean run
+.PHONY: clean run debug
 
 run: $(TARGET)
 	./$(TARGET)
+
+debug: $(TARGET)
+	gdb ./$(TARGET)
 
 clean:
 	rm -f $(BUILD_DIR)/*.o $(TARGET)

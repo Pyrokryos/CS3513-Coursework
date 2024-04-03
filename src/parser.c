@@ -22,7 +22,6 @@ static void E() {
 
         add_left_child(let, queue->head->vertex);
         dequeue(queue);
-        printf("E() -> D() %zu\n", get_size(queue));
 
         if (
             curr != NULL &&
@@ -34,11 +33,10 @@ static void E() {
 
             add_right_sibling(get_left_child(let), queue->head->vertex);
             dequeue(queue);
-            printf("E() -> D() -> E() %zu\n", get_size(queue));
 
             enqueue(queue, let);
         } else {
-            printf("E: 'in' expected.\n");
+            perror("E: 'in' expected.\n");
             exit(EXIT_FAILURE);
         }
     } else if (
@@ -65,12 +63,10 @@ static void E() {
                 add_right_sibling(temp, queue->head->vertex);
             }
             temp = dequeue(queue);
-            printf("E() -> Vb() * %zu %zu\n", iter, get_size(queue));
 
             iter++;
         }
         if (iter == 0) {
-            printf("E: At least one 'Vb' expected.\n");
             exit(EXIT_FAILURE);
         }
 
@@ -84,11 +80,10 @@ static void E() {
 
             add_right_sibling(temp, queue->head->vertex);
             dequeue(queue);
-            printf("E() -> Vb() * %zu -> E() %zu\n", iter, get_size(queue));
 
             enqueue(queue, lambda);
         } else {
-            printf("E: '.' expected.\n");
+            perror("E: '.' expected.\n");
             exit(EXIT_FAILURE);
         }
     } else {
@@ -109,14 +104,12 @@ static void Ew() {
 
         add_left_child(where, queue->head->vertex);
         dequeue(queue);
-        printf("Ew() -> T() %zu\n", get_size(queue));
 
         curr = curr->next;
         Dr();
 
         add_right_sibling(get_left_child(where), queue->head->vertex);
         dequeue(queue);
-        printf("Ew() -> T() -> Dr() %zu\n", get_size(queue));
 
         enqueue(queue, where);
     }
@@ -139,7 +132,6 @@ static void T() {
 
             add_left_child(tau, queue->head->vertex);
             temp = dequeue(queue);
-            printf("T() -> Ta() %zu\n", get_size(queue));
         }
 
         curr = curr->next;
@@ -147,7 +139,6 @@ static void T() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-        printf("T() -> Ta() * %zu %zu\n", iter + 1, get_size(queue));
 
         iter++;
     }
@@ -178,7 +169,6 @@ static void Ta() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-        printf("Ta() -> Tc() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, aug);
 
@@ -199,14 +189,12 @@ static void Tc() {
 
         add_left_child(arrow, queue->head->vertex);
         dequeue(queue);
-        printf("Tc() -> B() %zu\n", get_size(queue));
 
         curr = curr->next;
         Tc();
 
         add_right_sibling(get_left_child(arrow), queue->head->vertex);
         Vertex* temp = dequeue(queue);
-        printf("Tc() -> B() -> Tc() %zu\n", get_size(queue));
 
         if (
             curr != NULL &&
@@ -218,11 +206,10 @@ static void Tc() {
 
             add_right_sibling(temp, queue->head->vertex);
             dequeue(queue);
-            printf("Tc() -> B() -> Tc() -> Tc() %zu\n", get_size(queue));
 
             enqueue(queue, arrow);
         } else {
-            printf("Tc: '|' expected.\n");
+            perror("Tc: '|' expected.\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -250,7 +237,6 @@ static void B() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-        printf("B() -> Bt() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, or);
 
@@ -280,7 +266,6 @@ static void Bt() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-        printf("Bt() -> Bs() * %d %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, and);
 
@@ -302,7 +287,6 @@ static void Bs() {
 
         add_left_child(not, queue->head->vertex);
         dequeue(queue);
-        printf("Bs() -> Bp() %zu\n", get_size(queue));
 
         enqueue(queue, not);
     } else {
@@ -332,14 +316,12 @@ static void Bp() {
 
         add_left_child(gr, queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(gr), queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, gr);
     } else if (
@@ -352,14 +334,12 @@ static void Bp() {
 
         add_left_child(ge, queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(ge), queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, ge);
     } else if (
@@ -372,14 +352,12 @@ static void Bp() {
 
         add_left_child(ls, queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(ls), queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, ls);
     } else if (
@@ -392,14 +370,12 @@ static void Bp() {
 
         add_left_child(le, queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(le), queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, le);
     } else if (
@@ -411,14 +387,12 @@ static void Bp() {
 
         add_left_child(eq, queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(eq), queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, eq);
     } else if (
@@ -430,14 +404,12 @@ static void Bp() {
 
         add_left_child(ne, queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() %zu\n", get_size(queue));
 
         curr = curr->next;
         A();
 
         add_right_sibling(get_left_child(ne), queue->head->vertex);
         dequeue(queue);
-        printf("Bp() -> A() -> A() %zu\n", get_size(queue));
 
         enqueue(queue, ne);
     }
@@ -471,7 +443,6 @@ static void A() {
 
         add_left_child(neg, queue->head->vertex);
         dequeue(queue);
-        printf("A() -> At() %zu\n", get_size(queue));
 
         enqueue(queue, neg);
     } else {
@@ -497,7 +468,6 @@ static void A() {
 
         add_right_sibling(get_left_child(add_sub), queue->head->vertex);
         temp = dequeue(queue);
-        printf("A() -> At() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, add_sub);
 
@@ -532,7 +502,6 @@ static void At() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-        printf("At() -> Af() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, mul_div);
     }
@@ -554,14 +523,12 @@ static void Af() {
 
         add_left_child(power, queue->head->vertex);
         dequeue(queue);
-        printf("Af() -> Ap() %zu\n", get_size(queue));
 
         curr = curr->next;
         Af();
 
         add_right_sibling(get_left_child(power), queue->head->vertex);
         dequeue(queue);
-        printf("Af() -> Ap() -> Af() %zu\n", get_size(queue));
 
         enqueue(queue, power);
     }
@@ -606,11 +573,10 @@ static void Ap() {
 
             add_right_sibling(temp, queue->head->vertex);
             temp = dequeue(queue);
-            printf("Ap() -> R() * %zu %zu\n", iter + 1, get_size(queue));
 
             enqueue(queue, at);
         } else {
-            printf("Ap: '<IDENTIFIER>' expected.\n");
+            perror("Ap: '<IDENTIFIER>' expected.\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -649,7 +615,6 @@ static void R() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-        printf("R() -> Rn() * %zu %zu\n", iter + 1, get_size(queue));
 
         enqueue(queue, gamma);
     }
@@ -738,7 +703,7 @@ static void Rn() {
         ) {
             curr = curr->next;
         } else {
-            printf("Rn: ')' expected.\n");
+            perror("Rn: ')' expected.\n");
             exit(EXIT_FAILURE);
         }
     } else if (
@@ -761,7 +726,6 @@ static void Rn() {
 static void D() {
     Da();
 
-    printf("Parsing...\n");
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
@@ -771,14 +735,12 @@ static void D() {
 
         add_left_child(within, queue->head->vertex);
         dequeue(queue);
-        printf("D() -> Da() %zu\n", get_size(queue));
 
         curr = curr->next;
         Da();
 
         add_right_sibling(get_left_child(within), queue->head->vertex);
         dequeue(queue);
-        printf("D() -> Da() -> D() %zu\n", get_size(queue));
 
         enqueue(queue, within);
     }
@@ -804,7 +766,6 @@ static void Da() {
 
             add_left_child(and, queue->head->vertex);
             temp = dequeue(queue);
-            printf("Da() -> Dr() %zu\n", get_size(queue));
         }
 
         curr = curr->next;
@@ -812,7 +773,6 @@ static void Da() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
-        printf("Da() -> Dr() * %zu %zu\n", iter + 1, get_size(queue));
     }
     if (iter > 0) {
         enqueue(queue, and);
@@ -836,7 +796,6 @@ static void Dr() {
 
         add_left_child(rec, queue->head->vertex);
         dequeue(queue);
-        printf("Dr() -> Db() %zu\n", get_size(queue));
 
         enqueue(queue, rec);
     } else {
@@ -865,7 +824,7 @@ void Db() {
         ) {
             curr = curr->next;
         } else {
-            printf("Db: ')' expected.\n");
+            perror("Db: ')' expected.\n");
             exit(EXIT_FAILURE);
         }
     } else if (
@@ -881,8 +840,7 @@ void Db() {
 
         if (
             curr != NULL && (
-                curr->token->type == PUNCTUATION &&
-                strncmp(curr->token->value, ",", 1) == 0 ||
+                curr->token->type == PUNCTUATION && strncmp(curr->token->value, ",", 1) == 0 ||
                 curr->token->type == OPERATOR && strncmp(curr->token->value, "=", 1) == 0
             )
         ) {
@@ -919,7 +877,7 @@ void Db() {
 
                     iter++;
                 } else {
-                    printf("Db: '<IDENTIFIER>' expected.\n");
+                    perror("Db: '<IDENTIFIER>' expected.\n");
                     exit(EXIT_FAILURE);
                 }
             }
@@ -936,18 +894,16 @@ void Db() {
 
                 add_left_child(equals, queue->head->vertex);
                 dequeue(queue);
-                printf("Db() -> Vl() * %zu %zu\n", iter, get_size(queue));
 
                 curr = curr->next;
                 E();
 
                 add_right_sibling(get_left_child(equals), queue->head->vertex);
                 dequeue(queue);
-                printf("Db() -> Vl() * %zu -> E() %zu\n", iter, get_size(queue));
 
                 enqueue(queue, equals);
             } else {
-                printf("Db: '=' expected.\n");
+                perror("Db: '=' expected.\n");
                 exit(EXIT_FAILURE);
             }
         } else {
@@ -967,12 +923,11 @@ void Db() {
 
                 add_right_sibling(temp, queue->head->vertex);
                 temp = dequeue(queue);
-                printf("Db() -> Vb() * %zu %zu\n", iter + 1, get_size(queue));
 
                 iter++;
             }
             if (iter == 0) {
-                printf("Db: At least one 'Vb' expected.\n");
+                perror("Db: At least one 'Vb' expected.\n");
                 exit(EXIT_FAILURE);
             }
 
@@ -986,11 +941,10 @@ void Db() {
 
                 add_right_sibling(temp, queue->head->vertex);
                 dequeue(queue);
-                printf("Db() -> Vb() * %zu -> E() %zu\n", iter, get_size(queue));
 
                 enqueue(queue, fcn_form);
             }  else {
-                printf("Db: '=' expected.\n");
+                perror("Db: '=' expected.\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -1043,7 +997,7 @@ static void Vb() {
             ) {
                 curr = curr->next;
             } else {
-                printf("Vb: ')' expected.\n");
+                perror("Vb: ')' expected.\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -1094,16 +1048,19 @@ static void Vl() {
 
                 iter++;
             } else {
-                printf("Vl: <Identifier> expected.\n");
+                perror("Vl: <Identifier> expected.\n");
                 exit(EXIT_FAILURE);
             }
         }
         if (iter > 0) {
             enqueue(queue, comma);
+        } else {
+            free(comma);
+            enqueue(queue, identifier);
         }
     }
     else {
-        printf("Vl: <Identifier> expected.\n");
+        perror("Vl: <Identifier> expected.\n");
         exit(EXIT_FAILURE);
     }
 }
