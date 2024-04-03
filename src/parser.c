@@ -761,6 +761,7 @@ static void Rn() {
 static void D() {
     Da();
 
+    printf("Parsing...\n");
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
@@ -849,8 +850,6 @@ static void Dr() {
       -> ’(’ D ’)’ ;
 */
 void Db() {
-    printf("Db()\n");
-
     if (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
@@ -878,8 +877,6 @@ void Db() {
 
         Vertex* identifier = create_vertex(data);
 
-        enqueue(queue, identifier);
-
         curr = curr->next;
 
         if (
@@ -889,7 +886,7 @@ void Db() {
                 curr->token->type == OPERATOR && strncmp(curr->token->value, "=", 1) == 0
             )
         ) {
-            int iter = 0;
+            size_t iter = 0;
             Vertex* comma;
             Vertex* temp;
             while (
@@ -897,10 +894,12 @@ void Db() {
                 curr->token->type == PUNCTUATION &&
                 strncmp(curr->token->value, ",", 1) == 0
             ) {
-                comma = create_vertex(",");
+                if (iter == 0) {
+                    comma = create_vertex(",");
 
-                add_left_child(comma, queue->head->vertex);
-                temp = dequeue(queue);
+                    add_left_child(comma, identifier);
+                    temp = identifier;
+                }
 
                 curr = curr->next;
 
@@ -911,17 +910,21 @@ void Db() {
                     char* data = (char*) malloc(sizeof(char));
                     sprintf(data, "<ID:%s>", curr->token->value);
 
-                    Vertex* identifier = create_vertex(data);
+                    identifier = create_vertex(data);
 
                     add_right_sibling(temp, identifier);
-
-                    enqueue(queue, comma);
+                    temp = identifier;
 
                     curr = curr->next;
+
+                    iter++;
                 } else {
                     printf("Db: '<IDENTIFIER>' expected.\n");
                     exit(EXIT_FAILURE);
                 }
+            }
+            if (iter > 0) {
+                enqueue(queue, comma);
             }
 
             if (
@@ -929,14 +932,31 @@ void Db() {
                 curr->token->type == OPERATOR &&
                 strncmp(curr->token->value, "=", 1) == 0
             ) {
+                Vertex* equals = create_vertex("=");
+
+                add_left_child(equals, queue->head->vertex);
+                dequeue(queue);
+                printf("Db() -> Vl() * %zu %zu\n", iter, get_size(queue));
+
                 curr = curr->next;
                 E();
+
+                add_right_sibling(get_left_child(equals), queue->head->vertex);
+                dequeue(queue);
+                printf("Db() -> Vl() * %zu -> E() %zu\n", iter, get_size(queue));
+
+                enqueue(queue, equals);
             } else {
                 printf("Db: '=' expected.\n");
                 exit(EXIT_FAILURE);
             }
         } else {
-            int iter = 0;
+            Vertex* fcn_form = create_vertex("fcn_form");
+
+            add_left_child(fcn_form, identifier);
+
+            size_t iter = 0;
+            Vertex* temp = identifier;
             while (
                 curr != NULL && (
                     curr->token->type == IDENTIFIER ||
@@ -944,6 +964,11 @@ void Db() {
                 )
             ) {
                 Vb();
+
+                add_right_sibling(temp, queue->head->vertex);
+                temp = dequeue(queue);
+                printf("Db() -> Vb() * %zu %zu\n", iter + 1, get_size(queue));
+
                 iter++;
             }
             if (iter == 0) {
@@ -958,6 +983,12 @@ void Db() {
             ) {
                 curr = curr->next;
                 E();
+
+                add_right_sibling(temp, queue->head->vertex);
+                dequeue(queue);
+                printf("Db() -> Vb() * %zu -> E() %zu\n", iter, get_size(queue));
+
+                enqueue(queue, fcn_form);
             }  else {
                 printf("Db: '=' expected.\n");
                 exit(EXIT_FAILURE);
@@ -972,8 +1003,6 @@ void Db() {
         -> ’(’ ’)’
 */
 static void Vb() {
-    printf("Vb()\n");
-
     if (
         curr != NULL &&
         curr->token->type == IDENTIFIER
@@ -1025,8 +1054,6 @@ static void Vb() {
     Vl -> ’<IDENTIFIER>’ list ’,’
 */
 static void Vl() {
-    printf("Vl()\n");
-
     if (
         curr != NULL &&
         curr->token->type == IDENTIFIER
