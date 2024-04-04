@@ -15,7 +15,7 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
-#define TEST_FILE "tests/1.rpal"
+#define TEST_FILE "tests/2.rpal"
 #define MAX_FILE_SIZE 100000
 
 #include <stdio.h>
@@ -107,15 +107,17 @@ int main(int argc, char *argv[]) {
 
     // Perform lexical analysis and/or abstract syntax tree generation based on command line argument.
     TokenStream *stream = lex(content);
-    if (found_switch[0] > 0 && found_switch[1] > 0) {
-        display_list(stream);
-        printf("\n");
-        AST(parse(stream));
-    } else if (found_switch[0] > 0) {
-        display_list(stream);
-    } else if (found_switch[1] > 0) {
-        AST(parse(stream));
-    }
+    // if (found_switch[0] > 0 && found_switch[1] > 0) {
+    //     display_list(stream);
+    //     printf("\n");
+    //     AST(parse(stream));
+    // } else if (found_switch[0] > 0) {
+    //     display_list(stream);
+    // } else if (found_switch[1] > 0) {
+    //     AST(parse(stream));
+    // }
+    // display_list(stream);
+    AST(parse(stream));
 
     // Free the allocated memory.
     free(stream);

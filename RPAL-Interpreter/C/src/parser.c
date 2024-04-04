@@ -601,12 +601,13 @@ static void R() {
         curr != NULL && (
             curr->token->type == IDENTIFIER ||
             curr->token->type == INTEGER ||
-            curr->token->type == STRING ||
-            curr->token->type == KEYWORD && (
-                strncmp(curr->token->value, "true", 4) == 0 ||
-                strncmp(curr->token->value, "false", 5) == 0 ||
-                strncmp(curr->token->value, "nil", 3) == 0 ||
-                strncmp(curr->token->value, "dummy", 5) == 0
+            curr->token->type == STRING || (
+                curr->token->type == KEYWORD && (
+                    strncmp(curr->token->value, "true", 4) == 0 ||
+                    strncmp(curr->token->value, "false", 5) == 0 ||
+                    strncmp(curr->token->value, "nil", 3) == 0 ||
+                    strncmp(curr->token->value, "dummy", 5) == 0
+                )
             ) ||
             curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
         )
@@ -840,6 +841,7 @@ void Db() {
         sprintf(data, "<ID:%s>", curr->token->value);
 
         Vertex* identifier = create_vertex(data);
+        enqueue(queue, identifier);
 
         curr = curr->next;
 
@@ -857,12 +859,9 @@ void Db() {
                 curr->token->type == PUNCTUATION &&
                 strncmp(curr->token->value, ",", 1) == 0
             ) {
-                if (iter == 0) {
-                    comma = create_vertex(",");
+                comma = create_vertex(",");
 
-                    add_left_child(comma, identifier);
-                    temp = identifier;
-                }
+                add_left_child(comma, queue->head->vertex);
 
                 curr = curr->next;
 
@@ -870,13 +869,18 @@ void Db() {
                     curr != NULL &&
                     curr->token->type == IDENTIFIER
                 ) {
+                    temp = dequeue(queue);
+
                     char* data = (char*) malloc(sizeof(char));
                     sprintf(data, "<ID:%s>", curr->token->value);
 
                     identifier = create_vertex(data);
+                    enqueue(queue, identifier);
 
-                    add_right_sibling(temp, identifier);
-                    temp = identifier;
+                    add_right_sibling(temp, queue->head->vertex);
+                    temp = dequeue(queue);
+
+                    enqueue(queue, comma);
 
                     curr = curr->next;
 
