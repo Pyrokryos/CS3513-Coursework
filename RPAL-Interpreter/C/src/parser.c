@@ -862,6 +862,7 @@ void Db() {
                 comma = create_vertex(",");
 
                 add_left_child(comma, queue->head->vertex);
+                temp = dequeue(queue);
 
                 curr = curr->next;
 
@@ -869,8 +870,6 @@ void Db() {
                     curr != NULL &&
                     curr->token->type == IDENTIFIER
                 ) {
-                    temp = dequeue(queue);
-
                     char* data = (char*) malloc(sizeof(char));
                     sprintf(data, "<ID:%s>", curr->token->value);
 
@@ -879,8 +878,6 @@ void Db() {
 
                     add_right_sibling(temp, queue->head->vertex);
                     temp = dequeue(queue);
-
-                    enqueue(queue, comma);
 
                     curr = curr->next;
 
@@ -918,7 +915,8 @@ void Db() {
         } else {
             Vertex* fcn_form = create_vertex("fcn_form");
 
-            add_left_child(fcn_form, identifier);
+            add_left_child(fcn_form, queue->head->vertex);
+            dequeue(queue);
 
             size_t iter = 0;
             Vertex* temp = identifier;
