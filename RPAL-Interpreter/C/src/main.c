@@ -37,53 +37,51 @@
  */
 int main(int argc, char *argv[]) {
     // Array of valid command line switches
-    const char *switches[] = {"-ast", "-lex"};
+    const char *switches[] = {"-lex", "-ast"};
+    const size_t switches_count = sizeof(switches) / sizeof(switches[0]);
 
     // Array to keep track of found switches.
-    bool found_switch[sizeof(switches) / sizeof(switches[0])] = {false};
+    size_t found_switch[] = {0, 0};
 
     // Iterate through command line arguments.
-    for (int i = 1; i <= sizeof(switches) / sizeof(switches[0]); i++) {
-        bool valid_arg = false;
-
+    for (int i = 1; i < argc; i++) {
         // Check if the argument matches any of the valid switches.
-        for (int j = 0; j < sizeof(switches) / sizeof(switches[0]); j++) {
-            if (strcmp(argv[i], switches[j]) == 0) {
+        for (int j = 0; j < switches_count; j++) {
+            if (strncmp(argv[i], switches[j], sizeof(switches[j])) == 0) {
                 // Check if the switch has already been found.
-                if (found_switch[j]) {
+                if (found_switch[j] > 0) {
                     fprintf(stderr, "Duplicate switch: '%s'\n", argv[i]);
                     return EXIT_FAILURE;
                 }
 
-                found_switch[j] = true;
-                valid_arg = true;
+                found_switch[j] = i;
                 break;
             }
-        }
-
-        // If the argument is not a valid switch, print an error message and exit.
-        if (!valid_arg) {
-            fprintf(stderr, "Invalid switch or unexpected text: '%s'\n", argv[i]);
-            return EXIT_FAILURE;
         }
     }
 
     // Count the number of switches found.
-    int switch_count = 0;
+    size_t switches_found = 0, temp = 0;
     for (int i = 0; i < sizeof(found_switch) / sizeof(found_switch[0]); i++) {
-        if (found_switch[i]) {
-            switch_count++;
+        if (found_switch[i] > 0) {
+            switches_found++;
+            temp += found_switch[i];
         }
+    }
+    // Check if there are no other arguments between switches.
+    if (temp != switches_found * (switches_found + 1) / 2) {
+        fprintf(stderr, "Invalid switch order.\n");
+        return EXIT_FAILURE;
     }
 
     // Check if there are too many arguments.
-    if (argc > switch_count + 2) {
+    if (argc > switches_found + 2) {
         fprintf(stderr, "Too many arguments.\n");
         return EXIT_FAILURE;
     }
 
     // Get the file path as a command line argument or use a default file path.
-    char *file_path = (argc == switch_count + 2) ? argv[switch_count + 1] : TEST_FILE;
+    char *file_path = (argc == switches_found + 2) ? argv[switches_found + 1] : TEST_FILE;
 
     // Open the file for reading.
     FILE *file = fopen(file_path, "r");
@@ -109,12 +107,13 @@ int main(int argc, char *argv[]) {
 
     // Perform lexical analysis and/or abstract syntax tree generation based on command line argument.
     TokenStream *stream = lex(content);
-    if (found_switch[0]) {
+    if (found_switch[0] > 0 && found_switch[1] > 0) {
         display_list(stream);
         printf("\n");
-    }
-
-    if (found_switch[1]) {
+        AST(parse(stream));
+    } else if (found_switch[0] > 0) {
+        display_list(stream);
+    } else if (found_switch[1] > 0) {
         AST(parse(stream));
     }
 
