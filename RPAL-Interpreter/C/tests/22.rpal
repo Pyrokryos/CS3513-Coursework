@@ -1,0 +1,5 @@
+let T = (2,3)
+in
+let A = T aug 4
+in
+Print (A)

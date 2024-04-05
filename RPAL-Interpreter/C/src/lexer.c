@@ -19,7 +19,7 @@ TokenStream* lex(char *input) {
     while (*input != '\0') {
         if (is_whitespace(input)) {
             input = ignore_whitespace(input);
-        } else if (*input == '"') {
+        } else if (*input == '\'') {
             input = identify_string(input, stream);
         } else if (is_letter(input)) {
             char* temp = identify_keyword(input, stream);

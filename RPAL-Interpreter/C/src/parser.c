@@ -779,6 +779,8 @@ static void Da() {
 
         add_right_sibling(temp, queue->head->vertex);
         temp = dequeue(queue);
+
+        iter++;
     }
     if (iter > 0) {
         enqueue(queue, and);

@@ -14,11 +14,11 @@
 #define PUNCTUATION_REGEX "[();,]"
 #define WHITESPACE_REGEX "[ \t\n]+"
 #define COMMENT_REGEX "//[]'();,\\ \ta-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\n"
-#define KEYWORD_REGEX "(and|aug|dummy|eq|false|fn|ge|gt|in|let|le|ls|ne|nil|not|or|rec|true|where|within)[ \t\n]"
+#define KEYWORD_REGEX "(and|aug|dummy|eq|false|fn|ge|gr|in|let|le|ls|ne|nil|not|or|rec|true|where|within)[ \t\n]"
 #define IDENTIFIER_REGEX "[a-zA-Z][a-zA-Z0-9_]*"
 #define INTEGER_REGEX "[0-9]+"
 #define OPERATOR_REGEX "(.|(->)|&|>|(>=)|<|(<=)|\\+|-|\\*|/|(\\*\\*)|@|=)"
-#define STRING_REGEX "\"[][.\t.][.\n.][.\\.][.\".]();, a-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\""
+#define STRING_REGEX "\'[][.\t.][.\n.][.\\.][.\".]();, a-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\'"
 
 typedef LinkedList TokenStream;
 

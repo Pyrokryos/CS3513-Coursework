@@ -1,0 +1,7 @@
+(
+    Print(A)
+    where
+    A = (1, I, I ** 2, I ** 3, I ** 4, I ** 5)
+)
+where
+I = 2

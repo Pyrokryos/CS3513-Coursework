@@ -1,0 +1,3 @@
+let Abs = fn (X). X ls 0 -> -X | X
+in
+Print(Abs(3))
