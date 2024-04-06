@@ -158,7 +158,6 @@ static void Ta() {
 
     size_t iter = 0;
     Vertex* aug;
-    Vertex* temp;
     while (
         curr != NULL &&
         curr->token->type == KEYWORD &&
@@ -167,13 +166,13 @@ static void Ta() {
         aug = create_vertex("aug");
 
         add_left_child(aug, queue->head->vertex);
-        temp = dequeue(queue);
+        dequeue(queue);
 
         curr = curr->next;
         Tc();
 
-        add_right_sibling(temp, queue->head->vertex);
-        temp = dequeue(queue);
+        add_right_sibling(get_left_child(aug), queue->head->vertex);
+        dequeue(queue);
 
         enqueue(queue, aug);
 
@@ -199,7 +198,7 @@ static void Tc() {
         Tc();
 
         add_right_sibling(get_left_child(arrow), queue->head->vertex);
-        Vertex* temp = dequeue(queue);
+        dequeue(queue);
 
         if (
             curr != NULL &&
@@ -209,7 +208,7 @@ static void Tc() {
             curr = curr->next;
             Tc();
 
-            add_right_sibling(temp, queue->head->vertex);
+            add_right_sibling(get_right_sibling(get_left_child(arrow)), queue->head->vertex);
             dequeue(queue);
 
             enqueue(queue, arrow);
@@ -235,13 +234,13 @@ static void B() {
         or = create_vertex("or");
 
         add_left_child(or, queue->head->vertex);
-        temp = dequeue(queue);
+        dequeue(queue);
 
         curr = curr->next;
         Bt();
 
-        add_right_sibling(temp, queue->head->vertex);
-        temp = dequeue(queue);
+        add_right_sibling(get_left_child(or), queue->head->vertex);
+        dequeue(queue);
 
         enqueue(queue, or);
 
@@ -255,7 +254,6 @@ static void Bt() {
 
     int iter = 0;
     Vertex* and;
-    Vertex* temp;
     while (
         curr != NULL &&
         curr->token->type == OPERATOR &&
@@ -264,13 +262,13 @@ static void Bt() {
         and = create_vertex("&");
 
         add_left_child(and, queue->head->vertex);
-        temp = dequeue(queue);
+        dequeue(queue);
 
         curr = curr->next;
         Bs();
 
-        add_right_sibling(temp, queue->head->vertex);
-        temp = dequeue(queue);
+        add_right_sibling(get_left_child(and), queue->head->vertex);
+        dequeue(queue);
 
         enqueue(queue, and);
 
@@ -456,11 +454,12 @@ static void A() {
 
     size_t iter = 0;
     Vertex* add_sub;
-    Vertex* temp;
     while (
         curr != NULL && (
-            curr->token->type == OPERATOR && strncmp(curr->token->value, "+", 1) == 0 ||
-            curr->token->type == OPERATOR && strncmp(curr->token->value, "-", 1) == 0 && strncmp(curr->token->value, "->", 2) != 0
+            curr->token->type == OPERATOR && strncmp(curr->token->value, "+", 1) == 0 || (
+                curr->token->type == OPERATOR && strncmp(curr->token->value, "-", 1) == 0 &&
+                strncmp(curr->token->value, "->", 2) != 0
+            )
         )
     ) {
         add_sub = create_vertex(curr->token->value);
@@ -472,7 +471,7 @@ static void A() {
         At();
 
         add_right_sibling(get_left_child(add_sub), queue->head->vertex);
-        temp = dequeue(queue);
+        dequeue(queue);
 
         enqueue(queue, add_sub);
 
@@ -490,7 +489,6 @@ static void At() {
 
     size_t iter = 0;
     Vertex* mul_div;
-    Vertex* temp;
     while (
         curr != NULL && (
             curr->token->type == OPERATOR && strncmp(curr->token->value, "*", 1) == 0 ||
@@ -500,13 +498,13 @@ static void At() {
         mul_div = create_vertex(curr->token->value);
 
         add_left_child(mul_div, queue->head->vertex);
-        temp = dequeue(queue);
+        dequeue(queue);
 
         curr = curr->next;
         Af();
 
-        add_right_sibling(temp, queue->head->vertex);
-        temp = dequeue(queue);
+        add_right_sibling(get_left_child(mul_div), queue->head->vertex);
+        dequeue(queue);
 
         enqueue(queue, mul_div);
     }
@@ -548,7 +546,6 @@ static void Ap() {
 
     size_t iter = 0;
     Vertex* at;
-    Vertex* temp;
     while (
         curr != NULL &&
         curr->token->type == OPERATOR &&
@@ -557,7 +554,7 @@ static void Ap() {
         at = create_vertex("@");
 
         add_left_child(at, queue->head->vertex);
-        temp = dequeue(queue);
+        dequeue(queue);
 
         curr = curr->next;
 
@@ -570,14 +567,16 @@ static void Ap() {
 
             Vertex* identifier = create_vertex(data);
 
-            add_right_sibling(temp, identifier);
-            temp = identifier;
+            enqueue(queue, identifier);
+
+            add_right_sibling(get_left_child(at), queue->head->vertex);
+            dequeue(queue);
 
             curr = curr->next;
             R();
 
-            add_right_sibling(temp, queue->head->vertex);
-            temp = dequeue(queue);
+            add_right_sibling(get_right_sibling(get_left_child(at)), queue->head->vertex);
+            dequeue(queue);
 
             enqueue(queue, at);
         } else {
@@ -596,7 +595,6 @@ static void R() {
 
     size_t iter = 0;
     Vertex* gamma;
-    Vertex* temp;
     while (
         curr != NULL && (
             curr->token->type == IDENTIFIER ||
@@ -615,12 +613,12 @@ static void R() {
         gamma = create_vertex("gamma");
 
         add_left_child(gamma, queue->head->vertex);
-        temp = dequeue(queue);
+        dequeue(queue);
 
         Rn();
 
-        add_right_sibling(temp, queue->head->vertex);
-        temp = dequeue(queue);
+        add_right_sibling(get_left_child(gamma), queue->head->vertex);
+        dequeue(queue);
 
         enqueue(queue, gamma);
     }
@@ -659,7 +657,7 @@ static void Rn() {
         char* data = (char*) malloc(sizeof(char));
         sprintf(data, "<STR:%s>", curr->token->value);
 
-        Vertex* string= create_vertex(data);
+        Vertex* string = create_vertex(data);
 
         enqueue(queue, string);
 

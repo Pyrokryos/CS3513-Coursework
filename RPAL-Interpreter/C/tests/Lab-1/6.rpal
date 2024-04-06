@@ -1,0 +1,23 @@
+let start = 1 and end = 111111 // Given range
+and
+abs(x) =
+    x ls 0 -> -x
+        | x
+and
+// Here, 'n' and 'd' are assumed to be non-negative.
+rec remainder(n, d) =
+    d eq 0 -> -1 // Division by zero
+        | n ls d -> n
+            | remainder(n-d, d)
+in
+let rec is_pal(n, temp, i) =
+    n ls 0 -> false // Negative integers cannot be palindromes.
+        | n eq temp -> true
+            | n ls temp -> false
+                | is_pal(n, (temp * (10**(i-1)) + remainder(n, (10**i)), i+1))
+in
+let pal_in_range(n) =
+    is_pal(n, 0, 1) ne true -> pal_in_range(n + 1)
+        | nil aug n aug pal_in_range(n + 1)
+in
+Print(pal_in_range(start))

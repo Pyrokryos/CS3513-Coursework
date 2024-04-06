@@ -1,0 +1,17 @@
+let n = 17
+and
+abs(x) =
+    x ls 0 -> -x
+        | x
+and
+// Here, 'n' and 'd' are assumed to be non-negative.
+rec remainder(n, d) =
+    d eq 0 -> -1 // Division by zero
+        | n ls d -> n
+            | remainder(n-d, d)
+in
+let odd_or_even(n) =
+    remainder(abs(n), 2) eq 0 -> 'even'
+        | 'odd'
+in
+Print(odd_or_even(17))

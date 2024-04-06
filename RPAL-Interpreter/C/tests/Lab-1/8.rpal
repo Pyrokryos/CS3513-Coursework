@@ -1,0 +1,8 @@
+let n = 8
+and
+rec sum(n) =
+    n ls 0 -> -1 // 'n' has to be a natural number.
+        | n eq 0 -> 0
+            | n + sum(n - 1)
+in
+Print(sum(n))

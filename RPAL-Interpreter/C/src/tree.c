@@ -15,11 +15,11 @@ void add_left_child(Vertex* parent, Vertex* left_child) {
     parent->left_child = left_child;
 }
 
-Vertex* get_left_child(Vertex* parent) {
-    return parent->left_child;
+Vertex *get_left_child(Vertex *parent) {
+    return (struct Vertex *)parent->left_child;
 }
 
-void add_right_sibling(Vertex* vertex, Vertex* right_sibling) {
+void add_right_sibling(Vertex *vertex, Vertex *right_sibling) {
     vertex->right_sibling = right_sibling;
 }
 

@@ -1,0 +1,12 @@
+let lower = 3 and upper = 6 // Given range
+in
+let rec fib_next(x, y) =
+    x ls lower -> fib_next(y, x + y)
+        | x gr upper -> nil
+            | nil aug x aug fib_next(y, x + y)
+in
+let rec fib(lower, upper) =
+    lower gr upper -> nil
+    | fib_next(0, 1)
+in
+Print(fib(lower, upper))

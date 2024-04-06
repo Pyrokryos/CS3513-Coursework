@@ -1,0 +1,8 @@
+let num = 7
+and
+rec factorial(num) =
+    num ls 0 -> -1 // Factorial is undefined for negative integers.
+        | num eq 0 -> 1
+            | num * factorial(num - 1)
+in
+Print(factorial(num))

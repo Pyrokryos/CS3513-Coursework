@@ -1,0 +1,10 @@
+let a = 5 and b = -7 and c = 2 // Three numbers
+and
+max(a, b) =
+    a ge b -> a
+    | b
+in
+let max_of_three(a, b, c) =
+    max(max(a, b), c)
+in
+Print(max_of_three(a, b, c))

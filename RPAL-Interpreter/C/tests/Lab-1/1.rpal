@@ -1,0 +1,8 @@
+let x = -3 // Given number
+and
+sign(x) =
+    x gr 0 -> 'positive'
+        | x eq 0 -> 'zero'
+            | 'negative'
+in
+Print(sign(x))
