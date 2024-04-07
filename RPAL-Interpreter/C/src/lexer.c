@@ -12,31 +12,31 @@ static regex_t* integer_regex;
 static regex_t* operator_regex;
 static regex_t* string_regex;
 
+TokenStream *lex(char *input) {
+    TokenStream *stream = create_linked_list();
 
-TokenStream* lex(char *input) {
-    TokenStream* stream = create_linked_list();
-
-    while (*input != '\0') {
+    while (input != NULL && *input != '\0') {
         if (is_whitespace(input)) {
             input = ignore_whitespace(input);
-        } else if (*input == '\'') {
-            input = identify_string(input, stream);
-        } else if (is_letter(input)) {
-            char* temp = identify_keyword(input, stream);
-
-            if (temp != NULL) {
-                input = temp;
-            } else {
-                input = identify_identifier(input, stream);
-            }
-        }  else if (is_digit(input)) {
+        } else if (strncmp(input, "//", 2) == 0) {
+            input = ignore_comment(input);
+        } else if (is_digit(input)) {
             input = identify_integer(input, stream);
+        } else if (is_letter(input)) {
+            input = identify_identifier(input, stream);
+
+            if (keyword_length(stream->tail->token->value) == strlen(stream->tail->token->value)) {
+                stream->tail->token->type = KEYWORD;
+            }
+        } else if (is_operator(input)) {
+            input = identify_operator(input, stream);
         } else if (is_punctuation(input)) {
             input = identify_punctuation(input, stream);
-        } else if (*input == '/') {
-            input = ignore_comment(input);
+        } else if (*input == '\'') {
+            input = identify_string(input, stream);
         } else {
-            input = identify_operator(input, stream);
+            fprintf(stderr, "Unrecognised token: %c\n", *input);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -44,10 +44,8 @@ TokenStream* lex(char *input) {
     return stream;
 }
 
-
-const char* token_type_to_string(TokenType type) {
-    switch (type)
-    {
+const char *token_type_to_string(TokenType type) {
+    switch (type) {
         case IDENTIFIER: return "IDENTIFIER";
         case INTEGER: return "INTEGER";
         case KEYWORD: return "KEYWORD";
@@ -60,23 +58,19 @@ const char* token_type_to_string(TokenType type) {
     }
 }
 
+static regex_t *compile_regex(const char *pattern) {
+    regex_t *regex = (regex_t *)malloc(sizeof(regex_t));
 
-static bool is_digit(char* input) {
-    int reti;
-    if (digit_regex == NULL) {
-        digit_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (digit_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
+    if (regex == NULL) {
+        perror("Failed to allocate memory for regex.");
+        exit(EXIT_FAILURE);
+    } else {
+        int reti = regcomp(regex, pattern, REG_EXTENDED);
 
-        reti = regcomp(digit_regex, DIGIT_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, digit_regex, NULL, 0);
+        if (reti != _REG_NOERROR) {
+            size_t length = regerror(reti, regex, NULL, 0);
             char *buffer = (char *)malloc(length);
-            (void)regerror(reti, digit_regex, buffer, length);
+            (void)regerror(reti, regex, buffer, length);
 
             fprintf(stderr, "%s\n", buffer);
             free(buffer);
@@ -84,161 +78,44 @@ static bool is_digit(char* input) {
         }
     }
 
-    regmatch_t match;
-    reti = regexec(digit_regex, input, 1, &match, 0); // Execute the regex pattern matching.
-
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        return true; // If there is a match, return true.
-    }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return false; // If there is no match, return false.
-    }
-    else
-    {
-        // If there is an error in executing the regex pattern matching, handle the error.
-        size_t length = regerror(reti, digit_regex, NULL, 0);
-        char *buffer = (char *)malloc(length);
-        (void)regerror(reti, digit_regex, buffer, length);
-
-        fprintf(stderr, buffer);
-        free(buffer);
-        exit(EXIT_FAILURE);
-    }
+    return regex;
 }
 
-static bool is_letter(char* input) {
-    int reti;
-    if (letter_regex == NULL) {
-        letter_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (letter_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(letter_regex, LETTER_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, letter_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, letter_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
-    }
-
+static bool does_match(const regex_t *regex, const char *input) {
     regmatch_t match;
-    reti = regexec(letter_regex, input, 1, &match, 0); // Execute the regex pattern matching.
+    int reti = regexec(regex, input, 1, &match, 0);
 
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        return true; // If there is a match, return true.
-    }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return false; // If there is no match, return false.
-    }
-    else
-    {
-        // If there is an error in executing the regex pattern matching, handle the error.
-        size_t length = regerror(reti, letter_regex, NULL, 0);
-        char *buffer = (char *)malloc(length);
-        (void)regerror(reti, letter_regex, buffer, length);
-
-        fprintf(stderr, buffer);
-        free(buffer);
-        exit(EXIT_FAILURE);
-    }
+    return reti == _REG_NOERROR && match.rm_so == 0;
 }
 
-static bool is_punctuation(char* input) {
-    int reti;
-    if (punctuation_regex == NULL) {
-        punctuation_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (punctuation_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(punctuation_regex, PUNCTUATION_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, punctuation_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, punctuation_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
-    }
-
+static Match *match_regex(const regex_t *regex, const char *input) {
     regmatch_t match;
-    reti = regexec(punctuation_regex, input, 1, &match, 0); // Execute the regex pattern matching.
+    int reti = regexec(regex, input, 1, &match, 0);
 
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        return true; // If there is a match, return true.
-    }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return false; // If there is no match, return false.
-    }
-    else
-    {
-        // If there is an error in executing the regex pattern matching, handle the error.
-        size_t length = regerror(reti, punctuation_regex, NULL, 0);
-        char *buffer = (char *)malloc(length);
-        (void)regerror(reti, punctuation_regex, buffer, length);
+    if (reti == _REG_NOERROR && match.rm_so == 0) {
+        Match *result = (Match *)malloc(sizeof(Match));
 
-        fprintf(stderr, buffer);
-        free(buffer);
-        exit(EXIT_FAILURE);
-    }
-}
-
-static bool is_whitespace(char* input) {
-    int reti;
-    if (whitespace_regex == NULL) {
-        whitespace_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (whitespace_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
+        if (result == NULL) {
+            perror("Failed to allocate memory for match.");
             exit(EXIT_FAILURE);
+        } else {
+            result->value = (char *)malloc(match.rm_eo - match.rm_so + 1);
+
+            if (result->value == NULL) {
+                perror("Failed to allocate memory for match value.");
+                exit(EXIT_FAILURE);
+            } else {
+                strncpy(result->value, input, match.rm_eo - match.rm_so);
+                result->value[match.rm_eo - match.rm_so] = '\0';
+                result->start = match.rm_so;
+                result->end = match.rm_eo - 1;
+
+                return result;
+            }
         }
-
-        reti = regcomp(whitespace_regex, WHITESPACE_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, whitespace_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, whitespace_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    regmatch_t match;
-    reti = regexec(whitespace_regex, input, 1, &match, 0); // Execute the regex pattern matching.
-
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        return true; // If there is a match, return true.
-    }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return false; // If there is no match, return false.
-    }
-    else
-    {
-        // If there is an error in executing the regex pattern matching, handle the error.
+    } else if (reti == REG_NOMATCH || match.rm_so != 0) {
+        return NULL;
+    } else {
         size_t length = regerror(reti, whitespace_regex, NULL, 0);
         char *buffer = (char *)malloc(length);
         (void)regerror(reti, whitespace_regex, buffer, length);
@@ -249,504 +126,192 @@ static bool is_whitespace(char* input) {
     }
 }
 
-
-static char* ignore_comment(char* input) {
-    int reti;
-    if (comment_regex == NULL) {
-        comment_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (comment_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(comment_regex, COMMENT_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-	    {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, comment_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, comment_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-	    }
+static bool is_digit(char *input) {
+    if (digit_regex == NULL) {
+        digit_regex = compile_regex(DIGIT_REGEX);
     }
 
-	regmatch_t match;
-	reti = regexec(comment_regex, input, 1, &match, 0); // Execute the regex pattern matching.
-
-	if (reti == _REG_NOERROR)
-	{
-		return input + match.rm_eo - 1; // If there is a match, return the location of the comment.
-	}
-	else if (reti == REG_NOMATCH)
-	{
-		return NULL; // If there is no match, return NULL.
-	}
-	else
-	{
-		// If there is an error in executing the regex pattern matching, handle the error.
-		size_t length = regerror(reti, comment_regex, NULL, 0);
-		char *buffer = (char *)malloc(length);
-		(void)regerror(reti, comment_regex, buffer, length);
-
-		fprintf(stderr, buffer);
-		free(buffer);
-		exit(EXIT_FAILURE);
-	}
+    return does_match(digit_regex, &input[0]);
 }
 
-static char* ignore_whitespace(char* input) {
-    int reti;
+static bool is_letter(char *input) {
+    if (letter_regex == NULL) {
+        letter_regex = compile_regex(LETTER_REGEX);
+    }
+
+    return does_match(letter_regex, &input[0]);
+}
+
+static bool is_operator(char *input) {
+    if (operator_regex == NULL) {
+        operator_regex = compile_regex(OPERATOR_REGEX);
+    }
+
+    return does_match(operator_regex, &input[0]);
+}
+
+static bool is_punctuation(char *input) {
+    if (punctuation_regex == NULL) {
+        punctuation_regex = compile_regex(PUNCTUATION_REGEX);
+    }
+
+    return does_match(punctuation_regex, &input[0]);
+}
+
+static bool is_whitespace(char *input) {
     if (whitespace_regex == NULL) {
-        whitespace_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (whitespace_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(whitespace_regex, WHITESPACE_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, whitespace_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, whitespace_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
+        whitespace_regex = compile_regex(WHITESPACE_REGEX);
     }
 
-    regmatch_t match;
-    reti = regexec(whitespace_regex, input, 1, &match, 0); // Execute the regex pattern matching.
-
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        return input + match.rm_eo; // If there is a match, return the location of the whitespace.
-    }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return NULL; // If there is no match, return NULL.
-    }
-    else
-    {
-        // If there is an error in executing the regex pattern matching, handle the error.
-        size_t length = regerror(reti, whitespace_regex, NULL, 0);
-        char *buffer = (char *)malloc(length);
-        (void)regerror(reti, whitespace_regex, buffer, length);
-
-        fprintf(stderr, buffer);
-        free(buffer);
-        exit(EXIT_FAILURE);
-    }
+    return does_match(whitespace_regex, &input[0]);
 }
 
+static char *ignore_whitespace(char *input) {
+    if (whitespace_regex == NULL) {
+        whitespace_regex = compile_regex(WHITESPACE_REGEX);
+    }
+    Match *match = match_regex(whitespace_regex, input);
 
-static char* identify_keyword(char* input, TokenStream* stream) {
-    int reti;
+    return (match != NULL) ? input + match->end + 1 : input;
+}
+
+static char *ignore_comment(char *input) {
+    if (comment_regex == NULL) {
+        comment_regex = compile_regex(COMMENT_REGEX);
+    }
+    Match *match = match_regex(comment_regex, input);
+
+	return (match != NULL) ? input + match->end + 1 : input;
+}
+
+static size_t keyword_length(char *input) {
     if (keyword_regex == NULL) {
-        keyword_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (keyword_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(keyword_regex, KEYWORD_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, keyword_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, keyword_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
+        keyword_regex = compile_regex(KEYWORD_REGEX);
     }
+    Match *match = match_regex(keyword_regex, input);
 
-    regmatch_t match;
-    reti = regexec(keyword_regex, input, 1, &match, 0); // Execute the regex pattern matching.
-
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        char* value = (char *)malloc(match.rm_eo - match.rm_so);
-        if (value == NULL) {
-            perror("Failed to allocate memory for token value.");
-            exit(EXIT_FAILURE);
-        }
-
-        strncpy(value, input, match.rm_eo - match.rm_so - 1);
-        value[match.rm_eo - match.rm_so] = '\0';
-
-        Token* token = (Token *)malloc(sizeof(Token));
-        if (token == NULL) {
-            perror("Failed to allocate memory for token.");
-            exit(EXIT_FAILURE);
-        }
-
-        token->value = value;
-        token->type = KEYWORD;
-
-        insert_at_end(stream, token);
-
-        return input + match.rm_eo; // If there is a match, return the location of the keyword.
-    }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return NULL; // If there is no match, return NULL.
-    }
-    else
-    {
-        // If there is an error in executing the regex pattern matching, handle the error.
-        size_t length = regerror(reti, comment_regex, NULL, 0);
-        char *buffer = (char *)malloc(length);
-        (void)regerror(reti, comment_regex, buffer, length);
-
-        fprintf(stderr, buffer);
-		free(buffer);
-		exit(EXIT_FAILURE);
-    }
+    return (match != NULL) ? match->end - match->start + 1 : 0;
 }
 
 static char* identify_identifier(char* input, TokenStream* stream) {
-    int reti;
     if (identifier_regex == NULL) {
-        identifier_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (identifier_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(identifier_regex, IDENTIFIER_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, identifier_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, identifier_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
+        identifier_regex = compile_regex(IDENTIFIER_REGEX);
     }
+    Match *match = match_regex(identifier_regex, input);
 
-    regmatch_t match;
-    reti = regexec(identifier_regex, input, 1, &match, 0); // Execute the regex pattern matching.
+    if (match != NULL) {
+        Token *token = (Token *)malloc(sizeof(Token));
 
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        char* value = (char *)malloc(match.rm_eo - match.rm_so + 1);
-        if (value == NULL) {
-            perror("Failed to allocate memory for token value.");
-            exit(EXIT_FAILURE);
-        }
-
-        strncpy(value, input, match.rm_eo - match.rm_so);
-        value[match.rm_eo - match.rm_so] = '\0';
-
-        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
+        } else {
+            token->value = match->value;
+            token->type = IDENTIFIER;
+
+            insert_at_end(stream, token);
+
+            return input + match->end + 1;
         }
-
-        token->value = value;
-        token->type = IDENTIFIER;
-
-        insert_at_end(stream, token);
-
-        return input + match.rm_eo; // If there is a match, return the location of the identifier.
     }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return NULL; // If there is no match, return NULL.
-    }
-    else
-	{
-		// If there is an error in executing the regex pattern matching, handle the error.
-		size_t length = regerror(reti, comment_regex, NULL, 0);
-		char *buffer = (char *)malloc(length);
-		(void)regerror(reti, comment_regex, buffer, length);
-
-		fprintf(stderr, buffer);
-		free(buffer);
-		exit(EXIT_FAILURE);
-	}
+    return input;
 }
 
 static char* identify_integer(char* input, TokenStream* stream) {
-    int reti;
     if (integer_regex == NULL) {
-        integer_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (integer_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(integer_regex, INTEGER_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, integer_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, integer_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
+        integer_regex = compile_regex(INTEGER_REGEX);
     }
+    Match *match = match_regex(integer_regex, input);
 
-    regmatch_t match;
-    reti = regexec(integer_regex, input, 1, &match, 0); // Execute the regex pattern matching.
+    if (match != NULL) {
+        Token *token = (Token *)malloc(sizeof(Token));
 
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        char* value = (char *)malloc(match.rm_eo - match.rm_so + 1);
-        if (value == NULL) {
-            perror("Failed to allocate memory for token value.");
-            exit(EXIT_FAILURE);
-        }
-
-        strncpy(value, input, match.rm_eo - match.rm_so);
-        value[match.rm_eo - match.rm_so] = '\0';
-
-        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
+        } else {
+            token->value = match->value;
+            token->type = INTEGER;
+
+            insert_at_end(stream, token);
+
+            return input + match->end + 1;
         }
-
-        token->value = value;
-        token->type = INTEGER;
-
-        insert_at_end(stream, token);
-
-        return input + match.rm_eo; // If there is a match, return the location of the integer.
     }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return NULL; // If there is no match, return NULL.
-    }
-    else
-	{
-		// If there is an error in executing the regex pattern matching, handle the error.
-		size_t length = regerror(reti, comment_regex, NULL, 0);
-		char *buffer = (char *)malloc(length);
-		(void)regerror(reti, comment_regex, buffer, length);
-
-		fprintf(stderr, buffer);
-		free(buffer);
-		exit(EXIT_FAILURE);
-	}
+    return input;
 }
 
 static char* identify_operator(char* input, TokenStream* stream) {
-    int reti;
     if (operator_regex == NULL) {
-        operator_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (operator_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(operator_regex, OPERATOR_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, operator_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, operator_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
+        operator_regex = compile_regex(OPERATOR_REGEX);
     }
+    Match *match = match_regex(operator_regex, input);
 
-    regmatch_t match;
-    reti = regexec(operator_regex, input, 1, &match, 0); // Execute the regex pattern matching.
+    if (match != NULL) {
+        Token *token = (Token *)malloc(sizeof(Token));
 
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        char* value = (char *)malloc(match.rm_eo - match.rm_so + 1);
-        if (value == NULL) {
-            perror("Failed to allocate memory for token value.");
-            exit(EXIT_FAILURE);
-        }
-
-        strncpy(value, input, match.rm_eo - match.rm_so);
-        value[match.rm_eo - match.rm_so] = '\0';
-
-        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
+        } else {
+            token->value = match->value;
+            token->type = OPERATOR;
+
+            insert_at_end(stream, token);
+
+            return input + match->end + 1;
         }
-
-        token->value = value;
-        token->type = OPERATOR;
-
-        insert_at_end(stream, token);
-
-        return input + match.rm_eo; // If there is a match, return the location of the operator.
     }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return NULL; // If there is no match, return NULL.
-    }
-    else
-	{
-		// If there is an error in executing the regex pattern matching, handle the error.
-		size_t length = regerror(reti, comment_regex, NULL, 0);
-		char *buffer = (char *)malloc(length);
-		(void)regerror(reti, comment_regex, buffer, length);
-
-		fprintf(stderr, buffer);
-		free(buffer);
-		exit(EXIT_FAILURE);
-	}
+    return input;
 }
 
 static char* identify_punctuation(char* input, TokenStream* stream) {
-    int reti;
     if (punctuation_regex == NULL) {
-        punctuation_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (punctuation_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(punctuation_regex, PUNCTUATION_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, punctuation_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, punctuation_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
+        punctuation_regex = compile_regex(PUNCTUATION_REGEX);
     }
+    Match *match = match_regex(punctuation_regex, input);
 
-    regmatch_t match;
-    reti = regexec(punctuation_regex, input, 1, &match, 0); // Execute the regex pattern matching.
+    if (match != NULL) {
+        Token *token = (Token *)malloc(sizeof(Token));
 
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        char* value = (char *)malloc(match.rm_eo - match.rm_so + 1);
-        if (value == NULL) {
-            perror("Failed to allocate memory for token value.");
-            exit(EXIT_FAILURE);
-        }
-
-        strncpy(value, input, match.rm_eo - match.rm_so);
-        value[match.rm_eo - match.rm_so] = '\0';
-
-        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
+        } else {
+            token->value = match->value;
+            token->type = PUNCTUATION;
+
+            insert_at_end(stream, token);
+
+            return input + match->end + 1;
         }
-
-        token->value = value;
-        token->type = PUNCTUATION;
-
-        insert_at_end(stream, token);
-
-        return input + match.rm_eo; // If there is a match, return the location of the punctuation.
     }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return NULL; // If there is no match, return NULL.
-    }
-    else
-	{
-		// If there is an error in executing the regex pattern matching, handle the error.
-		size_t length = regerror(reti, comment_regex, NULL, 0);
-		char *buffer = (char *)malloc(length);
-		(void)regerror(reti, comment_regex, buffer, length);
-
-		fprintf(stderr, buffer);
-		free(buffer);
-		exit(EXIT_FAILURE);
-	}
+    return input;
 }
 
 static char* identify_string(char* input, TokenStream* stream) {
-    int reti;
     if (string_regex == NULL) {
-        string_regex = (regex_t *)malloc(sizeof(regex_t));
-        if (string_regex == NULL) {
-            perror("Failed to allocate memory for regex object.");
-            exit(EXIT_FAILURE);
-        }
-
-        reti = regcomp(string_regex, STRING_REGEX, REG_EXTENDED); // Compile the regex pattern.
-        if (reti != _REG_NOERROR)
-        {
-            // If there is an error in compiling the regex pattern, handle the error.
-            size_t length = regerror(reti, string_regex, NULL, 0);
-            char *buffer = (char *)malloc(length);
-            (void)regerror(reti, string_regex, buffer, length);
-
-            fprintf(stderr, "%s\n", buffer);
-            free(buffer);
-            exit(EXIT_FAILURE);
-        }
+        string_regex = compile_regex(STRING_REGEX);
     }
+    Match *match = match_regex(string_regex, input);
 
-    regmatch_t match;
-    reti = regexec(string_regex, input, 1, &match, 0); // Execute the regex pattern matching.
+    if (match != NULL) {
+        Token *token = (Token *)malloc(sizeof(Token));
 
-    if (reti == _REG_NOERROR && match.rm_so == 0)
-    {
-        char* value = (char *)malloc(match.rm_eo - match.rm_so + 1);
-        if (value == NULL) {
-            perror("Failed to allocate memory for token value.");
-            exit(EXIT_FAILURE);
-        }
-
-        strncpy(value, input, match.rm_eo - match.rm_so);
-        value[match.rm_eo - match.rm_so] = '\0';
-
-        Token* token = (Token *)malloc(sizeof(Token));
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
+        } else {
+            token->value = match->value;
+            token->type = STRING;
+
+            insert_at_end(stream, token);
+
+            return input + match->end + 1;
         }
-
-        token->value = value;
-        token->type = STRING;
-
-        insert_at_end(stream, token);
-
-        return input + match.rm_eo; // If there is a match, return the location of the string.
     }
-    else if (reti == REG_NOMATCH || match.rm_so != 0)
-    {
-        return NULL; // If there is no match, return NULL.
-    }
-    else
-	{
-		// If there is an error in executing the regex pattern matching, handle the error.
-		size_t length = regerror(reti, comment_regex, NULL, 0);
-		char *buffer = (char *)malloc(length);
-		(void)regerror(reti, comment_regex, buffer, length);
-
-		fprintf(stderr, buffer);
-		free(buffer);
-		exit(EXIT_FAILURE);
-	}
+    return input;
 }
-
 
 static void free_regex() {
     if (digit_regex != NULL) {

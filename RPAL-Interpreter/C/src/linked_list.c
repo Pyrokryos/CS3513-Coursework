@@ -43,6 +43,7 @@ void insert_at_end(LinkedList* list, struct Token *token) {
     list->size++;
 }
 
+// Display the contents of the linked list.
 void display_list(LinkedList* list) {
     Node *current = list->head;
 
