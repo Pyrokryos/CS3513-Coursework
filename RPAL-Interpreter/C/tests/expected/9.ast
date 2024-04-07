@@ -1,0 +1,17 @@
+let
+.=
+..<ID:Abs>
+..lambda
+...<ID:X>
+...->
+....ls
+.....<ID:X>
+.....<INT:0>
+....neg
+.....<ID:X>
+....<ID:X>
+.gamma
+..<ID:Print>
+..gamma
+...<ID:Abs>
+...<INT:3>

@@ -15,7 +15,7 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
-#define TEST_FILE "test.rpal"
+#define TEST_FILE "tests/1.rpal"
 #define MAX_FILE_SIZE 100000
 
 #include <stdio.h>
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     // Open the file for reading.
     FILE *file = fopen(file_path, "r");
     if (file == NULL) {
-        fprintf(stderr, "Error opening file.\n");
+        fprintf(stderr, "Error opening file: %s\n", file_path);
         return EXIT_FAILURE;
     }
 

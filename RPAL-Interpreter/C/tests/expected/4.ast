@@ -1,0 +1,10 @@
+let
+.=
+..<ID:Name>
+..<STR:'Dulina Perera'>
+.gamma
+..<ID:Print>
+..tau
+...<STR:'Hello '>
+...<ID:Name>
+...<STR:'!'>

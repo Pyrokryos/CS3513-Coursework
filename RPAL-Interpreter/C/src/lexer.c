@@ -1,6 +1,5 @@
 #include "../include/lexer.h"
 
-// Declare global variables to hold compiled regex patterns.
 static regex_t* digit_regex;
 static regex_t* letter_regex;
 static regex_t* punctuation_regex;

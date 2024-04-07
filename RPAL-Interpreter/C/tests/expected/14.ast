@@ -1,0 +1,16 @@
+let
+.fcn_form
+..<ID:Add>
+..,
+...<ID:x>
+...<ID:y>
+..+
+...<ID:x>
+...<ID:y>
+.gamma
+..<ID:Print>
+..gamma
+...<ID:Add>
+...tau
+....<INT:3>
+....<INT:4>
