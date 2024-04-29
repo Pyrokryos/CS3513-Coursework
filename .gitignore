@@ -1,1 +1,5 @@
+# Ignore the file containing the commit message.
 commit_msg.txt
+
+# Ignore the generated files.
+**/generated/

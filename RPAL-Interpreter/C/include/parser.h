@@ -14,6 +14,7 @@ static Queue* queue;
 
 Vertex* parse(TokenStream* stream);
 void AST(Vertex* vertex);
+void ST(Vertex* vertex);
 
 /* Expressions */
 static void E();

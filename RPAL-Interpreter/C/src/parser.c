@@ -1,6 +1,6 @@
 #include "../include/parser.h"
 
-Vertex* parse(TokenStream* stream) {
+Vertex* parse(TokenStream *stream) {
     curr = stream->head;
     queue = create_empty_queue();
 
@@ -9,8 +9,12 @@ Vertex* parse(TokenStream* stream) {
     return queue->head->vertex;
 }
 
-void AST(Vertex* vertex) {
+void AST(Vertex *vertex) {
     depth_first_left_to_right_traversal(vertex, 0);
+}
+
+void ST(Vertex *vertex) {
+    depth_first_left_to_right_traversal(standardize(vertex), 0);
 }
 
 // E -> ’let’ D ’in’ E | ’fn’ Vb+ ’.’ E | Ew

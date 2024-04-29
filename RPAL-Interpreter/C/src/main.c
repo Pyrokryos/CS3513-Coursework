@@ -15,7 +15,7 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
-#define TEST_FILE "tests/1.rpal"
+#define TEST_FILE "tests/5.rpal"
 #define MAX_FILE_SIZE 100000
 
 #include <stdio.h>
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         // Check if the argument matches any of the valid switches.
         for (int j = 0; j < switches_count; j++) {
-            if (strncmp(argv[i], switches[j], sizeof(switches[j])) == 0) {
+            if (strncmp(argv[i], switches[j], (size_t) sizeof(switches[j])) == 0) {
                 // Check if the switch has already been found.
                 if (found_switch[j] > 0) {
                     fprintf(stderr, "Duplicate switch: '%s'\n", argv[i]);
@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
     } else if (found_switch[1] > 0) {
         AST(parse(stream));
     }
+    ST(parse(stream));
 
     // Free the allocated memory.
     free(stream);
