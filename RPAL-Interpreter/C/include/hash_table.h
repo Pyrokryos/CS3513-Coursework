@@ -17,7 +17,7 @@ typedef struct HashTable {
 
 HashTable *initHashTable(size_t size);
 
-static size_t hash(const char* str, size_t tableSize);
+static size_t hash(const char* str, size_t table_size);
 
 int insert(HashTable *ht, const char *key, const char *val);
 

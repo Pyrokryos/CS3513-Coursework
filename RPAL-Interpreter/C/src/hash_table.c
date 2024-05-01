@@ -24,7 +24,7 @@ HashTable *initHashTable(size_t size) {
     return ht;
 }
 
-static size_t hash(const char* str, size_t tableSize) {
+static size_t hash(const char* str, size_t table_size) {
     if (str == NULL) {
         perror("Cannot hash a null string.\n");
         exit(EXIT_FAILURE);
@@ -34,7 +34,7 @@ static size_t hash(const char* str, size_t tableSize) {
     for (size_t i = 0; str[i] != '\0'; ++i) {
         sum += (size_t)str[i];
     }
-    return sum % tableSize;
+    return sum % table_size;
 }
 
 int insert(HashTable *ht, const char *key, const char *val) {
