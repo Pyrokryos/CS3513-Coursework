@@ -53,7 +53,7 @@ typedef enum TokenType {
 
 // Structure representing a token, containing its value and type
 typedef struct Token {
-    char *value;
+    const char *const value;
     TokenType type;
 } Token;
 

@@ -1,5 +1,6 @@
-#include "../include/hash_table.h"
 #include <stdio.h>
+
+#include "../include/hash_table.h"
 
 HashTable *initHashTable(size_t size) {
     HashTable *ht = (HashTable *) malloc(sizeof(HashTable));

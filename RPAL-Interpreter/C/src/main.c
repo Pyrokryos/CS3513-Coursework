@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
     } else if (found_switch[1] > 0) {
         AST(parse(stream));
     }
-    ST(parse(stream));
 
     // Free the allocated memory.
     free(stream);

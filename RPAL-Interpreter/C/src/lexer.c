@@ -198,22 +198,26 @@ static char* identify_identifier(char* input, TokenStream* stream) {
     }
     Match *match = match_regex(identifier_regex, input);
 
-    if (match != NULL) {
+    if (match == NULL) {
+        free(match->value);
+        free(match);
+        return input;
+    } else if (match != NULL) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
         } else {
-            token->value = match->value;
-            token->type = IDENTIFIER;
+            Token temp = { match->value, IDENTIFIER };
+            memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
 
+            free(match);
             return input + match->end + 1;
         }
     }
-    return input;
 }
 
 static char* identify_integer(char* input, TokenStream* stream) {
@@ -222,22 +226,26 @@ static char* identify_integer(char* input, TokenStream* stream) {
     }
     Match *match = match_regex(integer_regex, input);
 
-    if (match != NULL) {
+    if (match == NULL) {
+        free(match->value);
+        free(match);
+        return input;
+    } else if (match != NULL) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
         } else {
-            token->value = match->value;
-            token->type = INTEGER;
+            Token temp = { match->value, INTEGER };
+            memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
 
+            free(match);
             return input + match->end + 1;
         }
     }
-    return input;
 }
 
 static char* identify_operator(char* input, TokenStream* stream) {
@@ -253,11 +261,12 @@ static char* identify_operator(char* input, TokenStream* stream) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
         } else {
-            token->value = match->value;
-            token->type = OPERATOR;
+            Token temp = { match->value, OPERATOR };
+            memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
 
+            free(match);
             return input + match->end + 1;
         }
     }
@@ -270,22 +279,26 @@ static char* identify_punctuation(char* input, TokenStream* stream) {
     }
     Match *match = match_regex(punctuation_regex, input);
 
-    if (match != NULL) {
+    if (match == NULL) {
+        free(match->value);
+        free(match);
+        return input;
+    } else if (match != NULL) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
         } else {
-            token->value = match->value;
-            token->type = PUNCTUATION;
+            Token temp = { match->value, PUNCTUATION };
+            memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
 
+            free(match);
             return input + match->end + 1;
         }
     }
-    return input;
 }
 
 static char* identify_string(char* input, TokenStream* stream) {
@@ -294,22 +307,26 @@ static char* identify_string(char* input, TokenStream* stream) {
     }
     Match *match = match_regex(string_regex, input);
 
-    if (match != NULL) {
+    if (match == NULL) {
+        free(match->value);
+        free(match);
+        return input;
+    } else if (match != NULL) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
             perror("Failed to allocate memory for token.");
             exit(EXIT_FAILURE);
         } else {
-            token->value = match->value;
-            token->type = STRING;
+            Token temp = { match->value, STRING };
+            memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
 
+            free(match);
             return input + match->end + 1;
         }
     }
-    return input;
 }
 
 static void free_regex() {

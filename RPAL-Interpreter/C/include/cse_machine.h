@@ -1,22 +1,26 @@
 #pragma once
 
-#include "hashtable.h"
+#include <stdlib.h>
+#include <string.h>
+
+#include "hash_table.h"
+#include "parser.h"
 
 typedef struct Env {
-    HashTable *const rename_rules;
-    const Env *const prev;
+    HashTable *rename_rules;
+    struct Env *prev;
 } Env;
 
 typedef struct Tuple {
-    const size_t elem_cnt;
-    const char **const elems;
+    size_t elem_cnt;
+    char **elems;
 } Tuple;
 
 typedef struct Lambda {
-    const struct Tuple *const params;
-    const struct CtrlCell *const cell;
+    struct Tuple *params;
+    struct CtrlCell *cell;
 } Lambda;
-t
+
 typedef enum CellType {
     T_Env,
     T_Tuple,
@@ -26,11 +30,20 @@ typedef enum CellType {
 } CellType;
 
 typedef struct CtrlCell {
-    const CellType type;
+    CellType type;
     union {
-        const struct Env *const env;
-        const struct Tuple *const tuple;
-        const struct Lambda *const lambda;
-        const char *const other;
+        struct Env *env;
+        struct Tuple *tuple;
+        struct Lambda *lambda;
+        char *other;
     } content;
+    struct CtrlCell *prev;
+    struct CtrlCell *next;
 } CtrlCell;
+
+CtrlCell *currentEnv;
+CtrlCell *currentCell;
+
+void initCSEMachine();
+
+void generateCtrlStructs(Vertex *vertex);
