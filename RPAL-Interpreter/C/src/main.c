@@ -15,7 +15,7 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
-#define TEST_FILE "tests/5.rpal"
+#define TEST_FILE "tests/1.rpal"
 #define MAX_FILE_SIZE 100000
 
 #include <stdio.h>
