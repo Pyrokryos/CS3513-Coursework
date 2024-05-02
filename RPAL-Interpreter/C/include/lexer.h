@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defs.h"
 #include "linked_list.h"
 
 //Regular expressions
@@ -34,37 +35,8 @@
 #define INTEGER_REGEX "[0-9]+"
 #define STRING_REGEX "\'[][.\t.][.\n.][.\\.][.\".]();, a-zA-Z0-9+-\\*<>&.@/:=~|$!#%^_[{}\"`?]*\'"
 
-// Structure representing a match, containing the matched value and its start and end positions
-typedef struct Match {
-    char *value;
-    size_t start;
-    size_t end;
-} Match;
-
-// Enumeration of different token types
-typedef enum TokenType {
-    IDENTIFIER,
-    INTEGER,
-    KEYWORD,
-    OPERATOR,
-    PUNCTUATION,
-    STRING
-} TokenType;
-
-// Structure representing a token, containing its value and type
-typedef struct Token {
-    const char *const value;
-    TokenType type;
-} Token;
-
-// Linked list of tokens
-typedef LinkedList TokenStream;
-
 // Lexical analysis function, takes an input string and returns a token stream
 TokenStream *lex(char *input);
-
-// Function to convert a token type to a string representation
-const char *token_type_to_string(TokenType type);
 
 // Helper functions for regular expression matching
 static regex_t *compile_regex(const char *pattern);

@@ -1,54 +1,48 @@
-#ifndef PARSER_H
-#define PARSER_H
+#pragma once
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "lexer.h"
-#include "linked_list.h"
-#include "queue.h"
+#include "defs.h"
 #include "tree.h"
 
 static Node* curr;
-static Queue* queue;
 
 Vertex* parse(TokenStream* stream);
 void AST(Vertex* vertex);
 void ST(Vertex* vertex);
 
 /* Expressions */
-static void E();
-static void Ew();
+static Vertex *E();
+static Vertex *Ew();
 
 /* Tuple Expressions */
-static void T();
-static void Ta();
-static void Tc();
+static Vertex *T();
+static Vertex *Ta();
+static Vertex *Tc();
 
 /* Boolean Expressions */
-static void B();
-static void Bt();
-static void Bs();
-static void Bp();
+static Vertex *B();
+static Vertex *Bt();
+static Vertex *Bs();
+static Vertex *Bp();
 
 /* Arithmetic Expressions */
-static void A();
-static void At();
-static void Af();
-static void Ap();
+static Vertex *A();
+static Vertex *At();
+static Vertex *Af();
+static Vertex *Ap();
 
 /* Rators And Rands */
-static void R();
-static void Rn();
+static Vertex *R();
+static Vertex *Rn();
 
 /* Definitions */
-static void D();
-static void Da();
-static void Dr();
-static void Db();
+static Vertex *D();
+static Vertex *Da();
+static Vertex *Dr();
+static Vertex *Db();
 
 /* Variables */
-static void Vb();
-static void Vl();
-
-#endif
+static Vertex *Vb();
+static Vertex *Vl();

@@ -43,20 +43,6 @@ TokenStream *lex(char *input) {
     return stream;
 }
 
-const char *token_type_to_string(TokenType type) {
-    switch (type) {
-        case IDENTIFIER: return "IDENTIFIER";
-        case INTEGER: return "INTEGER";
-        case KEYWORD: return "KEYWORD";
-        case OPERATOR: return "OPERATOR";
-        case PUNCTUATION: return "PUNCTUATION";
-        case STRING: return "STRING";
-        default:
-            fprintf(stderr, "Unknown token type encountered: %d\n", type);
-            exit(EXIT_FAILURE);
-    }
-}
-
 static regex_t *compile_regex(const char *pattern) {
     regex_t *regex = (regex_t *)malloc(sizeof(regex_t));
 

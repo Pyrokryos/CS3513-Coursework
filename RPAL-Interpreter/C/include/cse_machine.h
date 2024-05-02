@@ -44,6 +44,6 @@ typedef struct CtrlCell {
 CtrlCell *currentEnv;
 CtrlCell *currentCell;
 
-void initCSEMachine();
+// void initCSEMachine();
 
-void generateCtrlStructs(Vertex *vertex);
+// void generateCtrlStructs(Vertex *vertex);

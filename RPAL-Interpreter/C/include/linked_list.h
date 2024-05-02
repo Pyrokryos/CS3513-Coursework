@@ -4,18 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef struct Token Token;
-
-typedef struct Node {
-    struct Token *token;
-    struct Node *next;
-} Node;
-
-typedef struct LinkedList {
-    Node *head;
-    Node *tail;
-    size_t size;
-} LinkedList;
+#include "defs.h"
 
 LinkedList* create_linked_list();
 

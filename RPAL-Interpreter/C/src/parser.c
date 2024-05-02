@@ -2,35 +2,30 @@
 
 Vertex* parse(TokenStream *stream) {
     curr = stream->head;
-    queue = create_empty_queue();
 
-    E();
-
-    return queue->head->vertex;
+    return E();
 }
 
 void AST(Vertex *vertex) {
     depth_first_left_to_right_traversal(vertex, 0);
 }
 
-void ST(Vertex *vertex) {
-    depth_first_left_to_right_traversal(standardize(vertex), 0);
-}
+// void ST(Vertex *vertex) {
+//     depth_first_left_to_right_traversal(standardize(vertex), 0);
+// }
 
 // E -> ’let’ D ’in’ E | ’fn’ Vb+ ’.’ E | Ew
-static void E() {
+static Vertex *E() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "let", 3) == 0
     ) {
-        Vertex* let = create_vertex("let");
+        Vertex *let = create_vertex(E_LET, NULL);
 
         curr = curr->next;
-        D();
 
-        add_left_child(let, queue->head->vertex);
-        dequeue(queue);
+        add_left_child(let, D());
 
         if (
             curr != NULL &&
@@ -38,12 +33,10 @@ static void E() {
             strncmp(curr->token->value, "in", 2) == 0
         ) {
             curr = curr->next;
-            E();
+            
+            add_right_sibling(get_left_child(let), E());
 
-            add_right_sibling(get_left_child(let), queue->head->vertex);
-            dequeue(queue);
-
-            enqueue(queue, let);
+            return let;
         } else {
             perror("E: 'in' expected.\n");
             exit(EXIT_FAILURE);
@@ -53,29 +46,29 @@ static void E() {
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "fn", 2) == 0
     ) {
-        Vertex* lambda = create_vertex("lambda");
+        Vertex *lambda = create_vertex(E_LAMBDA, NULL);
 
         curr = curr->next;
 
         size_t iter = 0;
-        Vertex* temp = lambda;
+        Vertex *temp = lambda;
         while (
             curr != NULL &&
             curr->token->type == IDENTIFIER ||
             curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
         ) {
-            Vb();
-
             if (iter == 0) {
-                add_left_child(temp, queue->head->vertex);
+                add_left_child(temp, Vb());
+                temp = get_left_child(temp);
             } else {
-                add_right_sibling(temp, queue->head->vertex);
+                add_right_sibling(temp, Vb());
+                temp = get_right_sibling(temp);
             }
-            temp = dequeue(queue);
 
             iter++;
         }
         if (iter == 0) {
+            perror("E: At least one 'Vb' expected.\n");
             exit(EXIT_FAILURE);
         }
 
@@ -85,124 +78,111 @@ static void E() {
             strncmp(curr->token->value, ".", 1) == 0
         ) {
             curr = curr->next;
-            E();
 
-            add_right_sibling(temp, queue->head->vertex);
-            dequeue(queue);
-
-            enqueue(queue, lambda);
+            add_right_sibling(temp, E());
+            return lambda;
         } else {
             perror("E: '.' expected.\n");
             exit(EXIT_FAILURE);
         }
     } else {
-        Ew();
+        return Ew();
     }
 }
 
 // Ew ->  T ’where’ Dr | T
-static void Ew() {
-    T();
+static Vertex *Ew() {
+    Vertex *temp = T();
 
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "where", 5) == 0
     ) {
-        Vertex* where = create_vertex("where");
-
-        add_left_child(where, queue->head->vertex);
-        dequeue(queue);
+        Vertex* where = create_vertex(E_WHERE, NULL);
 
         curr = curr->next;
-        Dr();
 
-        add_right_sibling(get_left_child(where), queue->head->vertex);
-        dequeue(queue);
+        add_left_child(where, temp);
+        add_right_sibling(get_left_child(where), Dr());
 
-        enqueue(queue, where);
+        return where;
+    } else {
+        return temp;
     }
 }
 
 // T -> Ta ( ’,’ Ta )+ | Ta
-static void T() {
-    Ta();
-
+static Vertex *T() {
     size_t iter = 0;
-    Vertex* tau;
-    Vertex* temp;
+    Vertex *tau;
+    Vertex *temp = Ta();
     while (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
         strncmp(curr->token->value, ",", 1) == 0
     ) {
         if (iter == 0) {
-            tau = create_vertex("tau");
+            tau = create_vertex(T_TAU, NULL);
 
-            add_left_child(tau, queue->head->vertex);
-            temp = dequeue(queue);
+            add_left_child(tau, temp);
+            temp = get_left_child(tau);
         }
 
         curr = curr->next;
-        Ta();
 
-        add_right_sibling(temp, queue->head->vertex);
-        temp = dequeue(queue);
+        add_right_sibling(temp, Ta());
+        temp = get_right_sibling(temp);
 
         iter++;
     }
     if (iter > 0) {
-        enqueue(queue, tau);
+        return tau;
+    } else {
+        return temp;
     }
 }
 
 // Ta -> Ta ’aug’ Tc | Tc
-static void Ta() {
-    Tc();
-
+static Vertex *Ta() {
     size_t iter = 0;
-    Vertex* aug;
+    Vertex *aug;
+    Vertex *temp = Tc();
     while (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "aug", 3) == 0
     ) {
-        aug = create_vertex("aug");
-
-        add_left_child(aug, queue->head->vertex);
-        dequeue(queue);
+        aug = create_vertex(T_AUG, NULL);
 
         curr = curr->next;
-        Tc();
 
-        add_right_sibling(get_left_child(aug), queue->head->vertex);
-        dequeue(queue);
+        add_left_child(aug, temp);
+        add_right_sibling(get_left_child(aug), Tc());
 
-        enqueue(queue, aug);
+        temp = aug;
 
         iter++;
     }
+
+    return temp;
 }
 
 // Tc -> B ’->’ Tc ’|’ Tc | B
-static void Tc() {
-    B();
+static Vertex *Tc() {
+    Vertex *temp = B();
 
     if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "->", 2) == 0
     ) {
-        Vertex* arrow = create_vertex("->");
-
-        add_left_child(arrow, queue->head->vertex);
-        dequeue(queue);
+        Vertex* arrow = create_vertex(T_COND, NULL);
 
         curr = curr->next;
-        Tc();
 
-        add_right_sibling(get_left_child(arrow), queue->head->vertex);
-        dequeue(queue);
+        add_left_child(arrow, temp);
+        add_right_sibling(get_left_child(arrow), Tc());
 
         if (
             curr != NULL &&
@@ -210,94 +190,85 @@ static void Tc() {
             strncmp(curr->token->value, "|", 1) == 0
         ) {
             curr = curr->next;
-            Tc();
-
-            add_right_sibling(get_right_sibling(get_left_child(arrow)), queue->head->vertex);
-            dequeue(queue);
-
-            enqueue(queue, arrow);
+            
+            add_right_sibling(get_right_sibling(get_left_child(arrow)), Tc());
+            
+            return arrow;
         } else {
             perror("Tc: '|' expected.\n");
             exit(EXIT_FAILURE);
         }
+    } else {
+        return temp;
     }
 }
 
 // B -> B ’or’ Bt | Bt
-static void B() {
-    Bt();
-
+static Vertex *B() {
     size_t iter = 0;
-    Vertex* or;
-    Vertex* temp;
+    Vertex *or;
+    Vertex *temp = Bt();
     while (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "or", 2) == 0
     ) {
-        or = create_vertex("or");
-
-        add_left_child(or, queue->head->vertex);
-        dequeue(queue);
+        or = create_vertex(B_OR, NULL);
 
         curr = curr->next;
-        Bt();
 
-        add_right_sibling(get_left_child(or), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, or);
+        add_left_child(or, temp);
+        add_right_sibling(get_left_child(or), Bt());
+        
+        temp = or;
 
         iter++;
     }
+
+    return temp;
 }
 
 // Bt -> Bt ’&’ Bs | Bs
-static void Bt() {
-    Bs();
-
+static Vertex *Bt() {
     int iter = 0;
-    Vertex* and;
+    Vertex *and;
+    Vertex *temp = Bs();
     while (
         curr != NULL &&
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "&", 1) == 0
     ) {
-        and = create_vertex("&");
-
-        add_left_child(and, queue->head->vertex);
-        dequeue(queue);
+        and = create_vertex(B_AND, NULL);
 
         curr = curr->next;
-        Bs();
 
-        add_right_sibling(get_left_child(and), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, and);
+        add_left_child(and, temp);
+        add_right_sibling(get_left_child(and), Bs());
+        
+        temp = and;
 
         iter++;
     }
+
+    return temp;
 }
 
 // Bs -> ’not’ Bp | Bp
-static void Bs() {
+static Vertex *Bs() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "not", 3) == 0
     ) {
-        Vertex* not = create_vertex("not");
+        Vertex *not = create_vertex(B_NOT, NULL);
 
         curr = curr->next;
-        Bp();
 
-        add_left_child(not, queue->head->vertex);
-        dequeue(queue);
+        add_left_child(not, Bp());
 
-        enqueue(queue, not);
+        return not;
     } else {
-        Bp();
+        return Bp();
     }
 }
 
@@ -310,8 +281,8 @@ static void Bs() {
         -> A ’ne’ A
         -> A ;
 */
-static void Bp() {
-    A();
+static Vertex *Bp() {
+    Vertex *temp = A();
 
     if (
         curr != NULL && (
@@ -319,106 +290,78 @@ static void Bp() {
             curr->token->type == OPERATOR && strncmp(curr->token->value, ">", 1) == 0
         )
     ) {
-        Vertex* gr = create_vertex("gr");
-
-        add_left_child(gr, queue->head->vertex);
-        dequeue(queue);
-
+        Vertex *gr = create_vertex(B_GR, NULL);
         curr = curr->next;
-        A();
 
-        add_right_sibling(get_left_child(gr), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, gr);
+        add_left_child(gr, temp);
+        add_right_sibling(get_left_child(gr), A());
+        
+        return gr;
     } else if (
         curr != NULL && (
             curr->token->type == KEYWORD && strncmp(curr->token->value, "ge", 2) == 0 ||
             curr->token->type == OPERATOR && strncmp(curr->token->value, ">=", 2) == 0
         )
     ) {
-        Vertex* ge = create_vertex("ge");
-
-        add_left_child(ge, queue->head->vertex);
-        dequeue(queue);
-
+        Vertex *ge = create_vertex(B_GE, NULL);
         curr = curr->next;
-        A();
 
-        add_right_sibling(get_left_child(ge), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, ge);
+        add_left_child(ge, temp);
+        add_right_sibling(get_left_child(ge), A());
+        
+        return ge;
     } else if (
         curr != NULL && (
             curr->token->type == KEYWORD && strncmp(curr->token->value, "ls", 2) == 0 ||
             curr->token->type == OPERATOR && strncmp(curr->token->value, "<", 1) == 0
         )
     ) {
-        Vertex* ls = create_vertex("ls");
-
-        add_left_child(ls, queue->head->vertex);
-        dequeue(queue);
-
+        Vertex *ls = create_vertex(B_LS, NULL);
         curr = curr->next;
-        A();
 
-        add_right_sibling(get_left_child(ls), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, ls);
+        add_left_child(ls, temp);
+        add_right_sibling(get_left_child(ls), A());
+        
+        return ls;
     } else if (
         curr != NULL && (
             curr->token->type == KEYWORD && strncmp(curr->token->value, "le", 2) == 0 ||
             curr->token->type == OPERATOR && strncmp(curr->token->value, "<=", 2) == 0
         )
     ) {
-        Vertex* le = create_vertex("le");
-
-        add_left_child(le, queue->head->vertex);
-        dequeue(queue);
-
+        Vertex *le = create_vertex(B_LE, NULL);
         curr = curr->next;
-        A();
 
-        add_right_sibling(get_left_child(le), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, le);
+        add_left_child(le, temp);
+        add_right_sibling(get_left_child(le), A());
+        
+        return le;
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "eq", 2) == 0
     ) {
-        Vertex* eq = create_vertex("eq");
-
-        add_left_child(eq, queue->head->vertex);
-        dequeue(queue);
-
+        Vertex *eq = create_vertex(B_EQ, NULL);
         curr = curr->next;
-        A();
 
-        add_right_sibling(get_left_child(eq), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, eq);
+        add_left_child(eq, temp);
+        add_right_sibling(get_left_child(eq), A());
+        
+        return eq;
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "ne", 2) == 0
     ) {
-        Vertex* ne = create_vertex("ne");
-
-        add_left_child(ne, queue->head->vertex);
-        dequeue(queue);
-
+        Vertex *ne = create_vertex(B_NE, NULL);
         curr = curr->next;
-        A();
 
-        add_right_sibling(get_left_child(ne), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, ne);
+        add_left_child(ne, temp);
+        add_right_sibling(get_left_child(ne), A());
+        
+        return ne;
+    } else {
+        return temp;
     }
 }
 
@@ -429,35 +372,34 @@ static void Bp() {
         -> ’-’ At
         -> At ;
 */
-static void A() {
+static Vertex *A() {
+    Vertex *temp;
     if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "+", 1) == 0
     ) {
         curr = curr->next;
-        At();
+        temp = At();
     } else if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "-", 1) == 0 &&
         strncmp(curr->token->value, "->", 2) != 0
     ) {
-        Vertex* neg = create_vertex("neg");
+        Vertex *neg = create_vertex(A_NEG, NULL);
 
         curr = curr->next;
-        At();
 
-        add_left_child(neg, queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, neg);
+        add_left_child(neg, At());
+        
+        temp = neg;
     } else {
-        At();
+        temp = At();
     }
 
     size_t iter = 0;
-    Vertex* add_sub;
+    Vertex *add_sub;
     while (
         curr != NULL && (
             curr->token->type == OPERATOR && strncmp(curr->token->value, "+", 1) == 0 || (
@@ -466,21 +408,23 @@ static void A() {
             )
         )
     ) {
-        add_sub = create_vertex(curr->token->value);
-
-        add_left_child(add_sub, queue->head->vertex);
-        dequeue(queue);
+        if (strncmp(curr->token->value, "+", 1) == 0) {
+            add_sub = create_vertex(A_ADD, NULL);
+        } else {
+            add_sub = create_vertex(A_SUB, NULL);
+        }
 
         curr = curr->next;
-        At();
 
-        add_right_sibling(get_left_child(add_sub), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, add_sub);
+        add_left_child(add_sub, temp);
+        add_right_sibling(get_left_child(add_sub), At());
+        
+        temp = add_sub;
 
         iter++;
     }
+
+    return temp;
 }
 
 /*
@@ -488,117 +432,106 @@ static void A() {
         -> At ’/’  Af
         -> Af ;
 */
-static void At() {
-    Af();
-
+static Vertex *At() {
     size_t iter = 0;
-    Vertex* mul_div;
+    Vertex *mul_div;
+    Vertex *temp = Af();
     while (
         curr != NULL && (
             curr->token->type == OPERATOR && strncmp(curr->token->value, "*", 1) == 0 ||
             curr->token->type == OPERATOR && strncmp(curr->token->value, "/", 1) == 0
         )
     ) {
-        mul_div = create_vertex(curr->token->value);
-
-        add_left_child(mul_div, queue->head->vertex);
-        dequeue(queue);
+        if (strncmp(curr->token->value, "*", 1) == 0) {
+            mul_div = create_vertex(A_MUL, NULL);
+        } else {
+            mul_div = create_vertex(A_DIV, NULL);
+        }
 
         curr = curr->next;
-        Af();
 
-        add_right_sibling(get_left_child(mul_div), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, mul_div);
+        add_left_child(mul_div, temp);
+        add_right_sibling(get_left_child(mul_div), Af());
+        
+        temp = mul_div;
     }
+
+    return temp;
 }
 
 /*
     Af -> Ap ’**’ Af
        -> Ap ;
 */
-static void Af() {
-    Ap();
+static Vertex *Af() {
+    Vertex *temp = Ap();
 
     if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "**", 2) == 0
     ) {
-        Vertex* power = create_vertex("**");
-
-        add_left_child(power, queue->head->vertex);
-        dequeue(queue);
+        Vertex *exp = create_vertex(A_EXP, NULL);
 
         curr = curr->next;
-        Af();
 
-        add_right_sibling(get_left_child(power), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, power);
+        add_left_child(exp, temp);
+        add_right_sibling(get_left_child(exp), Af());
+        
+        return exp;
     }
+    return temp;
 }
 
 /*
     Ap -> Ap ’@’ ’<IDENTIFIER>’ R
        -> R ;
 */
-static void Ap() {
-    R();
-
+static Vertex *Ap() {
     size_t iter = 0;
-    Vertex* at;
+    Vertex *at;
+    Vertex *temp = R();
     while (
         curr != NULL &&
         curr->token->type == OPERATOR &&
         strncmp(curr->token->value, "@", 1) == 0
     ) {
-        at = create_vertex("@");
-
-        add_left_child(at, queue->head->vertex);
-        dequeue(queue);
+        at = create_vertex(A_AT, NULL);
 
         curr = curr->next;
+
+        add_left_child(at, temp);        
 
         if (
             curr != NULL &&
             curr->token->type == IDENTIFIER
         ) {
-            char* data = (char*) malloc(sizeof(char));
-            sprintf(data, "<ID:%s>", curr->token->value);
-
-            Vertex* identifier = create_vertex(data);
-
-            enqueue(queue, identifier);
-
-            add_right_sibling(get_left_child(at), queue->head->vertex);
-            dequeue(queue);
+            Vertex* identifier = create_vertex(NONE, curr->token);
 
             curr = curr->next;
-            R();
 
-            add_right_sibling(get_right_sibling(get_left_child(at)), queue->head->vertex);
-            dequeue(queue);
+            add_right_sibling(get_left_child(at), identifier);
 
-            enqueue(queue, at);
+            add_right_sibling(get_right_sibling(get_left_child(at)), R());
+            
+            temp = at;
         } else {
             perror("Ap: '<IDENTIFIER>' expected.\n");
             exit(EXIT_FAILURE);
         }
     }
+
+    return temp;
 }
 
 /*
     R -> R Rn
       -> Rn ;
 */
-static void R() {
-    Rn();
-
+static Vertex *R() {
     size_t iter = 0;
-    Vertex* gamma;
+    Vertex *gamma;
+    Vertex *temp = Rn();
     while (
         curr != NULL && (
             curr->token->type == IDENTIFIER ||
@@ -614,18 +547,15 @@ static void R() {
             curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
         )
     ) {
-        gamma = create_vertex("gamma");
+        gamma = create_vertex(R_GAMMA, NULL);
 
-        add_left_child(gamma, queue->head->vertex);
-        dequeue(queue);
-
-        Rn();
-
-        add_right_sibling(get_left_child(gamma), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, gamma);
+        add_left_child(gamma, temp);
+        add_right_sibling(get_left_child(gamma), Rn());
+        
+        temp = gamma;
     }
+
+    return temp;
 }
 
 /*
@@ -638,71 +568,73 @@ static void R() {
         -> ’(’ E ’)’
         -> ’dummy’
 */
-static void Rn() {
+static Vertex *Rn() {
     if (curr != NULL && (curr->token->type == IDENTIFIER)) {
-        char* data = (char*) malloc(sizeof(char));
-        sprintf(data, "<ID:%s>", curr->token->value);
-
-        Vertex* identifier = create_vertex(data);
-
-        enqueue(queue, identifier);
+        Vertex *identifier = create_vertex(NONE, curr->token);
 
         curr = curr->next;
+
+        return identifier;
     } else if (curr != NULL && (curr->token->type == INTEGER)) {
-        char* data = (char*) malloc(sizeof(char));
-        sprintf(data, "<INT:%s>", curr->token->value);
-
-        Vertex* integer = create_vertex(data);
-
-        enqueue(queue, integer);
+        Vertex *integer = create_vertex(NONE, curr->token);
 
         curr = curr->next;
+
+        return integer;
     } else if (curr != NULL && (curr->token->type == STRING)) {
-        char* data = (char*) malloc(sizeof(char));
-        sprintf(data, "<STR:%s>", curr->token->value);
-
-        Vertex* string = create_vertex(data);
-
-        enqueue(queue, string);
+        Vertex *string = create_vertex(NONE, curr->token);
 
         curr = curr->next;
+
+        return string;
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "true", 4) == 0
     ) {
-        Vertex* _true = create_vertex("true");
-
-        enqueue(queue, _true);
+        Vertex *_true = create_vertex(R_TRUE, NULL);
 
         curr = curr->next;
+
+        return _true;
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "false", 5) == 0
     ) {
-        Vertex* _false = create_vertex("false");
-
-        enqueue(queue, _false);
+        Vertex *_false = create_vertex(R_FALSE, NULL);
 
         curr = curr->next;
+
+        return _false;
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "nil", 3) == 0
     ) {
-        Vertex* nil = create_vertex("nil");
-
-        enqueue(queue, nil);
+        Vertex *nil = create_vertex(R_NIL, NULL);
 
         curr = curr->next;
+
+        return nil;
+    } else if (
+        curr != NULL &&
+        curr->token->type == KEYWORD &&
+        strncmp(curr->token->value, "dummy", 5) == 0
+    ) {
+        Vertex *dummy = create_vertex(R_DUMMY, NULL);
+
+        curr = curr->next;
+
+        return dummy;
     } else if (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
         strncmp(curr->token->value, "(", 1) == 0
     ) {
         curr = curr->next;
-        E();
+        
+        Vertex *temp = E();
 
         if (
             curr != NULL &&
@@ -710,82 +642,71 @@ static void Rn() {
             strncmp(curr->token->value, ")", 1) == 0
         ) {
             curr = curr->next;
+
+            return temp;
         } else {
             perror("Rn: ')' expected.\n");
             exit(EXIT_FAILURE);
         }
-    } else if (
-        curr != NULL &&
-        curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "dummy", 5) == 0
-    ) {
-        Vertex* dummy = create_vertex("dummy");
-
-        enqueue(queue, dummy);
-
-        curr = curr->next;
-    }
+    } 
 }
 
 /*
     D -> Da ’within’ D => ’within’
       -> Da ;
 */
-static void D() {
-    Da();
+static Vertex *D() {
+    Vertex *temp = Da();
 
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "within", 6) == 0
     ) {
-        Vertex* within = create_vertex("within");
-
-        add_left_child(within, queue->head->vertex);
-        dequeue(queue);
+        Vertex *within = create_vertex(D_WITHIN, NULL);
 
         curr = curr->next;
-        Da();
 
-        add_right_sibling(get_left_child(within), queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, within);
+        add_left_child(within, temp);
+        add_right_sibling(get_left_child(within), D());
+        
+        temp = within;
     }
+
+    return temp;
 }
 
 /*
     Da -> Dr ( ’and’ Dr )+
        -> Dr ;
 */
-static void Da() {
-    Dr();
-
+static Vertex *Da() {
     size_t iter = 0;
-    Vertex* and;
-    Vertex* temp;
+    Vertex *and;
+    Vertex *temp =  Dr();
     while (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "and", 3) == 0
     ) {
         if (iter == 0) {
-            and = create_vertex("and");
+            and = create_vertex(D_AND, NULL);
 
-            add_left_child(and, queue->head->vertex);
-            temp = dequeue(queue);
+            add_left_child(and, temp);
+            temp = get_left_child(and);
         }
 
         curr = curr->next;
-        Dr();
 
-        add_right_sibling(temp, queue->head->vertex);
-        temp = dequeue(queue);
+        add_right_sibling(temp, Dr());
+        temp = get_right_sibling(temp);
 
         iter++;
     }
     if (iter > 0) {
-        enqueue(queue, and);
+        return and;
+    } else {
+        return temp;
     }
 }
 
@@ -793,23 +714,21 @@ static void Da() {
     Dr -> ’rec’ Db
         -> Db ;
 */
-static void Dr() {
+static Vertex *Dr() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
         strncmp(curr->token->value, "rec", 3) == 0
     ) {
-        Vertex* rec = create_vertex("rec");
+        Vertex* rec = create_vertex(D_REC, NULL);
 
         curr = curr->next;
-        Db();
-
-        add_left_child(rec, queue->head->vertex);
-        dequeue(queue);
-
-        enqueue(queue, rec);
+        
+        add_left_child(rec, Db());
+        
+        return rec;
     } else {
-        Db();
+        return Db();
     }
 }
 
@@ -818,14 +737,17 @@ static void Dr() {
       -> ’<IDENTIFIER>’ Vb+ ’=’ E
       -> ’(’ D ’)’ ;
 */
-void Db() {
+static Vertex *Db() {
+    Vertex *temp;
+
     if (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
         strncmp(curr->token->value, "(", 1) == 0
     ) {
         curr = curr->next;
-        D();
+        
+        temp = D();
 
         if (
             curr != NULL &&
@@ -833,6 +755,8 @@ void Db() {
             strncmp(curr->token->value, ")", 1) == 0
         ) {
             curr = curr->next;
+
+            return temp;
         } else {
             perror("Db: ')' expected.\n");
             exit(EXIT_FAILURE);
@@ -841,11 +765,7 @@ void Db() {
         curr != NULL &&
         curr->token->type == IDENTIFIER
     ) {
-        char* data = (char*) malloc(sizeof(char));
-        sprintf(data, "<ID:%s>", curr->token->value);
-
-        Vertex* identifier = create_vertex(data);
-        enqueue(queue, identifier);
+        Vertex* identifier = create_vertex(NONE, curr->token);
 
         curr = curr->next;
 
@@ -857,42 +777,39 @@ void Db() {
         ) {
             size_t iter = 0;
             Vertex* comma;
-            Vertex* temp;
+            Vertex* temp = identifier;
             while (
                 curr != NULL &&
                 curr->token->type == PUNCTUATION &&
                 strncmp(curr->token->value, ",", 1) == 0
             ) {
-                comma = create_vertex(",");
+                comma = create_vertex(V_COMMA, NULL);
 
-                add_left_child(comma, queue->head->vertex);
-                temp = dequeue(queue);
-
-                curr = curr->next;
-
-                if (
+                if (iter == 0) {
+                    add_left_child(comma, identifier);
+                } else {
+                    if (
                     curr != NULL &&
                     curr->token->type == IDENTIFIER
-                ) {
-                    char* data = (char*) malloc(sizeof(char));
-                    sprintf(data, "<ID:%s>", curr->token->value);
+                    ) {
+                        identifier = create_vertex(NONE, curr->token);
 
-                    identifier = create_vertex(data);
-                    enqueue(queue, identifier);
+                        curr = curr->next;
 
-                    add_right_sibling(temp, queue->head->vertex);
-                    temp = dequeue(queue);
+                        add_right_sibling(temp, identifier);
+                        temp = get_right_sibling(temp);
 
-                    curr = curr->next;
-
-                    iter++;
-                } else {
-                    perror("Db: '<IDENTIFIER>' expected.\n");
-                    exit(EXIT_FAILURE);
+                        iter++;
+                    } else {
+                        perror("Db: '<IDENTIFIER>' expected.\n");
+                        exit(EXIT_FAILURE);
+                    }
                 }
+
+                curr = curr->next;
             }
             if (iter > 0) {
-                enqueue(queue, comma);
+                temp = comma;
             }
 
             if (
@@ -900,40 +817,34 @@ void Db() {
                 curr->token->type == OPERATOR &&
                 strncmp(curr->token->value, "=", 1) == 0
             ) {
-                Vertex* equals = create_vertex("=");
+                Vertex *eq = create_vertex(D_EQ, NULL);
 
-                add_left_child(equals, queue->head->vertex);
-                dequeue(queue);
-
+                add_left_child(eq, temp);
+                
                 curr = curr->next;
-                E();
-
-                add_right_sibling(get_left_child(equals), queue->head->vertex);
-                dequeue(queue);
-
-                enqueue(queue, equals);
+                
+                add_right_sibling(get_left_child(eq), E());
+                
+                return eq;
             } else {
                 perror("Db: '=' expected.\n");
                 exit(EXIT_FAILURE);
             }
         } else {
-            Vertex* fcn_form = create_vertex("fcn_form");
+            Vertex *fcn_form = create_vertex(D_FCN, NULL);
 
-            add_left_child(fcn_form, queue->head->vertex);
-            dequeue(queue);
+            add_left_child(fcn_form, identifier);
 
             size_t iter = 0;
-            Vertex* temp = identifier;
+            Vertex *temp = identifier;
             while (
                 curr != NULL && (
                     curr->token->type == IDENTIFIER ||
                     curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
                 )
             ) {
-                Vb();
-
-                add_right_sibling(temp, queue->head->vertex);
-                temp = dequeue(queue);
+                add_right_sibling(temp, Vb());
+                temp = get_right_sibling(temp);
 
                 iter++;
             }
@@ -948,12 +859,10 @@ void Db() {
                 strncmp(curr->token->value, "=", 1) == 0
             ) {
                 curr = curr->next;
-                E();
 
-                add_right_sibling(temp, queue->head->vertex);
-                dequeue(queue);
-
-                enqueue(queue, fcn_form);
+                add_right_sibling(temp, E());
+                
+                return fcn_form;
             }  else {
                 perror("Db: '=' expected.\n");
                 exit(EXIT_FAILURE);
@@ -967,19 +876,16 @@ void Db() {
         -> ’(’ Vl ’)’
         -> ’(’ ’)’
 */
-static void Vb() {
+static Vertex *Vb() {
     if (
         curr != NULL &&
         curr->token->type == IDENTIFIER
     ) {
-        char* data = (char*) malloc(sizeof(char));
-        sprintf(data, "<ID:%s>", curr->token->value);
-
-        Vertex* identifier = create_vertex(data);
-
-        enqueue(queue, identifier);
+        Vertex *identifier = create_vertex(NONE, curr->token);
 
         curr = curr->next;
+
+        return identifier;
     } else if (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
@@ -992,14 +898,14 @@ static void Vb() {
             curr->token->type == PUNCTUATION &&
             strncmp(curr->token->value, ")", 1) == 0
         ) {
-            Vertex* bracket = create_vertex("()");
-
-            enqueue(queue, bracket);
+            Vertex *bracket = create_vertex(V_BRACKET, NULL);
 
             curr = curr->next;
+
+            return bracket;
         }
         else {
-            Vl();
+            Vertex *temp = Vl();
 
             if (
                 curr != NULL &&
@@ -1007,6 +913,8 @@ static void Vb() {
                 strncmp(curr->token->value, ")", 1) == 0
             ) {
                 curr = curr->next;
+
+                return temp;
             } else {
                 perror("Vb: ')' expected.\n");
                 exit(EXIT_FAILURE);
@@ -1018,24 +926,20 @@ static void Vb() {
 /*
     Vl -> ’<IDENTIFIER>’ list ’,’
 */
-static void Vl() {
+static Vertex *Vl() {
     if (
         curr != NULL &&
         curr->token->type == IDENTIFIER
     ) {
-        Vertex* comma = create_vertex(",");
-
-        char* data = (char*) malloc(sizeof(char));
-        sprintf(data, "<ID:%s>", curr->token->value);
-
-        Vertex* identifier = create_vertex(data);
-
-        add_left_child(comma, identifier);
+        Vertex *comma = create_vertex(V_COMMA, NULL);
+        Vertex *identifier = create_vertex(NONE, curr->token);
 
         curr = curr->next;
 
+        add_left_child(comma, identifier);
+
         size_t iter = 0;
-        Vertex* temp = identifier;
+        Vertex *temp = identifier;
         while (
             curr != NULL &&
             curr->token->type == PUNCTUATION &&
@@ -1047,13 +951,10 @@ static void Vl() {
                 curr != NULL &&
                 curr->token->type == IDENTIFIER
             ) {
-                char* data = (char*) malloc(sizeof(char));
-                sprintf(data, "<ID:%s>", curr->token->value);
-
-                Vertex* identifier = create_vertex(data);
+                identifier = create_vertex(NONE, curr->token);
 
                 add_right_sibling(temp, identifier);
-                temp = identifier;
+                temp = get_right_sibling(temp);
 
                 curr = curr->next;
 
@@ -1064,10 +965,9 @@ static void Vl() {
             }
         }
         if (iter > 0) {
-            enqueue(queue, comma);
+            return comma;
         } else {
-            free(comma);
-            enqueue(queue, identifier);
+            return identifier;
         }
     }
     else {
