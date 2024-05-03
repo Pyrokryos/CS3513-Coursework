@@ -16,9 +16,7 @@ Vertex *get_left_child(Vertex *parent);
 void add_right_sibling(Vertex *vertex, Vertex *right_sibling);
 Vertex *get_right_sibling(Vertex *vertex);
 
-static void free_vertex(Vertex *vertex);
-static void free_subtree(Vertex *vertex);
+static Vertex *clone_vertex(Vertex *vertex);
+static Vertex *clone_subtree(Vertex *root);
 
-// static Vertex *clone_vertex(Vertex *vertex);
-// static Vertex *clone_subtree(Vertex *root);
-// Vertex *standardize(Vertex *vertex);
+Vertex *standardize(Vertex *vertex);

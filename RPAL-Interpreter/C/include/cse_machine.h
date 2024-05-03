@@ -3,47 +3,55 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defs.h"
 #include "hash_table.h"
-#include "parser.h"
+#include "tree.h"
+
+typedef struct CtrlCell CtrlCell;
 
 typedef struct Env {
     HashTable *rename_rules;
     struct Env *prev;
 } Env;
 
-typedef struct Tuple {
+typedef struct Delta {
+    CtrlCell *cell;
+} Delta;
+
+typedef struct Tau {
     size_t elem_cnt;
     char **elems;
-} Tuple;
+} Tau;
 
 typedef struct Lambda {
-    struct Tuple *params;
-    struct CtrlCell *cell;
+    Tau *params;
+    CtrlCell *cell;
 } Lambda;
 
 typedef enum CellType {
-    T_Env,
-    T_Tuple,
-    T_Lambda,
-    T_Gamma,
-    T_Other
+    CELL_ENV,
+    CELL_DELTA,
+    CELL_BETA,
+    CELL_TAU,
+    CELL_LAMBDA,
+    CELL_OTHER
 } CellType;
 
 typedef struct CtrlCell {
     CellType type;
     union {
-        struct Env *env;
-        struct Tuple *tuple;
-        struct Lambda *lambda;
+        Env *env;
+        Delta *delta;
+        Tau *tau;
+        Lambda *lambda;
         char *other;
     } content;
     struct CtrlCell *prev;
     struct CtrlCell *next;
 } CtrlCell;
 
-CtrlCell *currentEnv;
-CtrlCell *currentCell;
+CtrlCell *current_env;
 
-// void initCSEMachine();
+void initCSEMachine();
 
-// void generateCtrlStructs(Vertex *vertex);
+CtrlCell *generateCtrlStructs(Vertex *vertex);

@@ -80,165 +80,302 @@ void depth_first_left_to_right_traversal(Vertex* vertex, size_t depth) {
     }
 }
 
-// static Vertex *clone_vertex(Vertex *vertex) {
-//     if (vertex == NULL) {
-//         return NULL;
-//     } else {
-//         char *data = strdup(vertex->data);
-//         return create_vertex(data);
-//     }
-// }
+static Vertex *clone_vertex(Vertex *vertex) {
+    if (vertex == NULL) {
+        return NULL;
+    } else {
+        if (vertex->type != NONE) {
+            return create_vertex(vertex->type, NULL);
+        } else {
+            Token temp = {strdup(vertex->token->value), vertex->token->type};
+        
+            Token *token = (Token *) malloc(sizeof(Token));
+            if (token == NULL) {
+                perror("Failed to allocate memory for token.\n");
+                exit(EXIT_FAILURE);
+            }
+            memcpy(token, &temp, sizeof(Token));
 
-// static Vertex *clone_subtree(Vertex *root) {
-//     if (root == NULL) {
-//         return NULL;
-//     } else {
-//         char *data = strdup(root->data);
-//         Vertex *cloned_root = create_vertex(data);
+            return create_vertex(NONE, token);
+        }
+    }
+}
 
-//         cloned_root->left_child = clone_subtree(root->left_child);
+static Vertex *clone_subtree(Vertex *root) {
+    if (root == NULL) {
+        return NULL;
+    } else {
+        Vertex *cloned_root = clone_vertex(root);
 
-//         if (cloned_root->left_child != NULL) {
-//             Vertex *t1 = root->left_child->right_sibling;
-//             Vertex *t2 = cloned_root->left_child;
-//             while (t1 != NULL) {
-//                 t2->right_sibling = clone_subtree(t1);
+        cloned_root->left_child = clone_subtree(root->left_child);
 
-//                 t2 = t2->right_sibling;
-//                 t1 = t1->right_sibling;
-//             }
-//         }
-//         return cloned_root;
-//     }
-// }
+        if (cloned_root->left_child != NULL) {
+            Vertex *t1 = root->left_child->right_sibling;
+            Vertex *t2 = cloned_root->left_child;
+            while (t1 != NULL) {
+                t2->right_sibling = clone_subtree(t1);
 
-// Vertex *standardize(Vertex *vertex) {
-//     Vertex *duplicate = clone_vertex(vertex);
+                t2 = t2->right_sibling;
+                t1 = t1->right_sibling;
+            }
+        }
+        return cloned_root;
+    }
+}
 
-//     if (vertex->left_child != NULL) {
-//         duplicate->left_child = standardize(vertex->left_child);
+Vertex *standardize(Vertex *vertex) {
+    if (vertex == NULL) {
+        return NULL;
+    }
 
-//         Vertex *t1 = vertex->left_child->right_sibling;
-//         Vertex *t2 = duplicate->left_child;
-//         while (t1 != NULL) {
-//             t2->right_sibling = standardize(t1);
+    if (vertex->left_child != NULL) {
+        Vertex *t1 = get_right_sibling(get_left_child(vertex));
 
-//             t2 = t2->right_sibling;
-//             t1 = t1->right_sibling;
-//         }
-//     }
+        add_left_child(vertex, standardize(vertex->left_child));
+        
+        Vertex *t2 = get_left_child(vertex);
+        Vertex *t3 = t1;
+        while (t3 != NULL) {
+            t1 = get_right_sibling(t1);
 
-//     Vertex *gamma, *lambda;
-//     if (
-//         strncmp(duplicate->data, "let", 3) == 0 &&
-//         strncmp(duplicate->left_child->data, "=", 1) == 0
-//     ) {
-//         gamma = create_vertex("gamma");
-//         lambda = create_vertex("lambda");
+            add_right_sibling(t2, standardize(t3));
 
-//         gamma->left_child = lambda;
-//         gamma->left_child->right_sibling = clone_subtree(duplicate->left_child->left_child->right_sibling);
+            t2 = get_right_sibling(t2);
+            t3 = t1;        
+        }
+    }
 
-//         lambda->left_child = clone_subtree(duplicate->left_child->left_child);
-//         lambda->left_child->right_sibling = clone_subtree(duplicate->left_child->right_sibling);
+    Vertex *gamma, *lambda;
+    if (
+        vertex->type == E_LET &&
+        vertex->left_child->type == D_EQ
+    ) {
+        gamma = create_vertex(R_GAMMA, NULL);
+        lambda = create_vertex(E_LAMBDA, NULL);
 
-//         free_subtree(duplicate);
+        Vertex *X = get_left_child(get_left_child(vertex));
+        Vertex *E = get_right_sibling(get_left_child(get_left_child(vertex)));
+        Vertex *P = get_right_sibling(get_left_child(vertex));
 
-//         return gamma;
-//     } else if (
-//         strncmp(duplicate->data, "where", 5) == 0 &&
-//         strncmp(duplicate->left_child->right_sibling->data, "=", 1) == 0
-//     ) {
-//         gamma = create_vertex("gamma");
-//         lambda = create_vertex("lambda");
+        add_right_sibling(X, P);
+        
+        add_left_child(lambda, X);
+        add_right_sibling(lambda, E);
 
-//         gamma->left_child = lambda;
-//         gamma->left_child->right_sibling = clone_subtree(duplicate->left_child->right_sibling->left_child->right_sibling);
+        add_left_child(gamma, lambda);
 
-//         lambda->left_child = clone_subtree(duplicate->left_child->right_sibling->left_child);
-//         lambda->left_child->right_sibling = clone_subtree(duplicate->left_child);
+        return gamma;
+    } else if (
+        vertex->type == E_WHERE &&
+        vertex->left_child->right_sibling->type == D_EQ
+    ) {
+        gamma = create_vertex(R_GAMMA, NULL);
+        lambda = create_vertex(E_LAMBDA, NULL);
 
-//         free_subtree(duplicate);
+        Vertex *X = get_left_child(get_right_sibling(get_left_child(vertex)));
+        Vertex *E = get_right_sibling(get_left_child(get_right_sibling(get_left_child(vertex))));
+        Vertex *P = get_left_child(vertex);
 
-//         return gamma;
-//     } else if (
-//         strncmp(duplicate->data, "within", 6) == 0 &&
-//         strncmp(duplicate->left_child->data, "=", 1) == 0 &&
-//         strncmp(duplicate->left_child->right_sibling->data, "=", 1) == 0
-//     ) {
-//         gamma = create_vertex("gamma");
-//         lambda = create_vertex("lambda");
+        add_right_sibling(X, P);
+        add_right_sibling(P, NULL);
 
-//         Vertex *eq = create_vertex("=");
-//         eq->left_child = clone_subtree(duplicate->left_child->right_sibling->left_child);
-//         eq->left_child->right_sibling = gamma;
+        add_left_child(lambda, X);
+        add_right_sibling(lambda, E);
 
-//         gamma->left_child = lambda;
-//         gamma->left_child->right_sibling = clone_subtree(duplicate->left_child->left_child->right_sibling);
+        add_left_child(gamma, lambda);
 
-//         lambda->left_child = clone_subtree(duplicate->left_child->left_child);
-//         lambda->left_child->right_sibling = clone_subtree(duplicate->left_child->right_sibling->left_child->right_sibling);
+        return gamma;
+    } else if (
+        vertex->type == D_WITHIN &&
+        vertex->left_child->type == D_EQ &&
+        vertex->left_child->right_sibling->type == D_EQ
+    ) {
+        gamma = create_vertex(R_GAMMA, NULL);
+        lambda = create_vertex(E_LAMBDA, NULL);
 
-//         free_subtree(duplicate);
+        Vertex *eq = create_vertex(D_EQ, NULL);
 
-//         return eq;
-//     } else if (
-//         strncmp(duplicate->data, "rec", 3) == 0 &&
-//         strncmp(duplicate->left_child->data, "=", 1) == 0
-//     ) {
-//         gamma = create_vertex("gamma");
-//         lambda = create_vertex("lambda");
+        Vertex *X1 = get_left_child(get_left_child(vertex));
+        Vertex *E1 = get_right_sibling(get_left_child(get_left_child(vertex)));
+        Vertex *X2 = get_left_child(get_right_sibling(get_left_child(vertex)));
+        Vertex *E2 = get_right_sibling(get_left_child(get_right_sibling(get_left_child(vertex))));
 
-//         Vertex *eq = create_vertex("=");
-//         eq->left_child = clone_subtree(duplicate->left_child->left_child);
-//         eq->left_child->right_sibling = gamma;
+        add_right_sibling(X1, E2);
+        add_right_sibling(X2, gamma);
 
-//         gamma->left_child = create_vertex("Ystar");
-//         gamma->left_child->right_sibling = lambda;
+        add_left_child(lambda, X1);
+        add_right_sibling(lambda, E1);
 
-//         lambda->left_child = clone_subtree(duplicate->left_child->left_child);
-//         lambda->left_child->right_sibling = clone_subtree(duplicate->left_child->left_child->right_sibling);
+        add_left_child(gamma, lambda);
 
-//         free_subtree(duplicate);
+        add_left_child(eq, X2);
 
-//         return eq;
-//     } else if (
-//         strncmp(duplicate->data, "fcn_form", 8) == 0
-//     ) {
-//         lambda = create_vertex("lambda");
+        return eq;
+    } else if (
+        vertex->type == D_REC &&
+        vertex->left_child->type == D_EQ
+    ) {
+        gamma = create_vertex(R_GAMMA, NULL);
+        lambda = create_vertex(E_LAMBDA, NULL);
 
-//         Vertex *eq = create_vertex("=");
-//         eq->left_child = clone_subtree(duplicate->left_child);
-//         eq->left_child->right_sibling = lambda;
+        Vertex *eq = create_vertex(D_EQ, NULL);
+        Vertex *yStar = create_vertex(Y_STAR, NULL);
+        Vertex *_X = clone_subtree(get_left_child(get_left_child(vertex)));
 
-//         lambda->left_child = clone_subtree(duplicate->left_child->right_sibling);
+        Vertex *X = get_left_child(get_left_child(vertex));
+        Vertex *E = get_right_sibling(get_left_child(get_left_child(vertex)));
 
-//         Vertex *t1 = duplicate->left_child->right_sibling->right_sibling;
-//         Vertex *t2 = lambda->left_child;
-//         while (t1 != NULL) {
-//             t2->right_sibling = clone_subtree(t1);
 
-//             t1 = t1->right_sibling;
-//             t2 = t2->right_sibling;
-//         }
+        add_left_child(lambda, X);
 
-//         free_subtree(duplicate);
+        add_right_sibling(yStar, lambda);
 
-//         return eq;
-//     } else if (strncmp(duplicate->data, "@", 1) == 0) {
-//         Vertex *g1 = create_vertex("gamma");
-//         Vertex *g2 = create_vertex("gamma");
+        add_left_child(gamma, yStar);
 
-//         g1->left_child = g2;
-//         g1->left_child->right_sibling = clone_subtree(duplicate->left_child->right_sibling->right_sibling);
+        add_right_sibling(_X, gamma);
 
-//         g2->left_child = clone_subtree(duplicate->left_child->right_sibling);
-//         g2->left_child->right_sibling = clone_subtree(duplicate->left_child);
+        add_left_child(eq, _X);
 
-//         free_subtree(duplicate);
+        return eq;
+    } else if (vertex->type == D_FCN) {
+        lambda = create_vertex(E_LAMBDA, NULL);
 
-//         return g1;
-//     } else {
-//         return duplicate;
-//     }
-// }
+        Vertex *eq = create_vertex(D_EQ, NULL);    
+        Vertex *comma = create_vertex(V_COMMA, NULL);
+        Vertex *P = get_left_child(vertex);
+
+        Vertex *t1 = get_right_sibling(get_left_child(vertex));
+        Vertex *t2 = NULL;
+        do {
+            if (t1->type == V_COMMA) {
+                if (t2 == NULL) {
+                    add_left_child(comma, get_left_child(t1));
+                } else {
+                    add_right_sibling(t2, get_left_child(t1));
+                }
+
+                t2 = get_left_child(t1);
+                while (get_right_sibling(t2) != NULL) {
+                    t2 = get_right_sibling(t2);
+                }
+            } else if (t1->type == NONE && t1->token->type == IDENTIFIER) {
+                if (t2 == NULL) {
+                    add_left_child(comma, clone_vertex(t1));
+
+                    t2 = get_left_child(comma);
+                } else {
+                    add_right_sibling(t2, clone_vertex(t1));
+
+                    t2 = get_right_sibling(t2);
+                }
+            }
+
+            t1 = get_right_sibling(t1);
+        } while (get_right_sibling(t1) != NULL);
+
+        Vertex *E = t1;
+
+        if (get_right_sibling(get_left_child(comma)) == NULL) {
+            comma = get_left_child(comma);
+        }
+
+        add_right_sibling(comma, E);
+        add_left_child(lambda, comma);
+        add_right_sibling(P, lambda);
+        add_left_child(eq, P);
+
+        return eq;
+    } else if (
+        vertex->type == E_LAMBDA &&
+        get_right_sibling(get_right_sibling(get_left_child(vertex))) != NULL
+    ) {
+        Vertex *comma = create_vertex(V_COMMA, NULL);
+
+        Vertex *t1 = get_left_child(vertex);
+        Vertex *t2 = NULL;
+        do {
+            if (t1->type == V_COMMA) {
+                if (t2 == NULL) {
+                    add_left_child(comma, get_left_child(t1));
+                } else {
+                    add_right_sibling(t2, get_left_child(t1));
+                }
+
+                t2 = get_left_child(t1);
+                while (get_right_sibling(t2) != NULL) {
+                    t2 = get_right_sibling(t2);
+                }
+            } else if (t1->type == NONE && t1->token->type == IDENTIFIER) {
+                if (t2 == NULL) {
+                    add_left_child(comma, clone_vertex(t1));
+
+                    t2 = get_left_child(comma);
+                } else {
+                    add_right_sibling(t2, clone_vertex(t1));
+
+                    t2 = get_right_sibling(t2);
+                }
+            }
+
+            t1 = get_right_sibling(t1);
+        } while (get_right_sibling(t1) != NULL);
+
+        Vertex *E = t1;
+
+        add_right_sibling(comma, E);
+        add_left_child(vertex, comma);
+
+        return vertex;
+    } else if (vertex->type == D_AND) {
+        Vertex *eq = create_vertex(D_EQ, NULL);
+        Vertex *comma = create_vertex(V_COMMA, NULL);
+        Vertex *tau = create_vertex(T_TAU, NULL);
+
+        add_left_child(eq, comma);
+        add_right_sibling(comma, tau);
+
+        Vertex *t1 = get_left_child(vertex), *t2, *t3;
+        while (t1 != NULL) {
+            if (get_left_child(comma) == NULL) {
+                add_left_child(comma, get_left_child(t1));
+                add_left_child(tau, get_right_sibling(get_left_child(t1)));
+
+                t2 = get_left_child(comma);
+                t3 = get_left_child(tau);
+            } else {
+                add_right_sibling(t2, get_left_child(t1));
+                add_right_sibling(t3, get_right_sibling(get_left_child(t1)));
+
+                t2 = get_right_sibling(t2);
+                add_right_sibling(t2, NULL);
+                t3 = get_right_sibling(t3);
+                add_right_sibling(t3, NULL);
+            }
+
+            t1 = get_right_sibling(t1);
+        }
+
+        return eq;
+    } else if (vertex->type == A_AT) {
+        Vertex *g1 = create_vertex(R_GAMMA, NULL);
+        Vertex *g2 = create_vertex(R_GAMMA, NULL);
+
+        Vertex *E1 = get_left_child(vertex);
+        Vertex *N = get_right_sibling(get_left_child(vertex));
+        Vertex *E2 = get_right_sibling(get_right_sibling(get_left_child(vertex)));
+
+        add_right_sibling(E1, NULL);
+
+        add_right_sibling(N, E1);
+
+        add_left_child(g2, N);
+
+        add_right_sibling(g2, E2);
+
+        add_left_child(g1, g2);
+
+        return g1;
+    } else {
+        return vertex;
+    }
+}

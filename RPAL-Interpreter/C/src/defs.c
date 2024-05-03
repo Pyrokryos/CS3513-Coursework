@@ -57,6 +57,8 @@ const char *phrase_type_to_string(PhraseType type) {
         case V_BRACKET: return "()";
         case V_COMMA: return ",";
 
+        case Y_STAR: return "Y*";
+
         case NONE: return "NONE";
 
         default:

@@ -80,6 +80,8 @@ typedef enum PhraseType {
     V_BRACKET,
     V_COMMA,
 
+    Y_STAR,
+
     NONE
 } PhraseType;
 
