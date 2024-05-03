@@ -19,13 +19,12 @@ typedef struct Delta {
 } Delta;
 
 typedef struct Tau {
-    size_t elem_cnt;
-    char **elems;
+    CtrlCell **expressions;
 } Tau;
 
 typedef struct Lambda {
-    Tau *params;
-    CtrlCell *cell;
+    char **params;
+    CtrlCell *body;
 } Lambda;
 
 typedef enum CellType {
@@ -34,7 +33,39 @@ typedef enum CellType {
     CELL_BETA,
     CELL_TAU,
     CELL_LAMBDA,
-    CELL_OTHER
+    
+    CELL_AUG,
+
+    CELL_OR,
+    CELL_AND,
+    CELL_NOT,
+    CELL_GR,
+    CELL_GE,
+    CELL_LS,
+    CELL_LE,
+    CELL_EQ,
+    CELL_NE,
+
+    CELL_ADD,
+    CELL_SUB,
+    CELL_NEG,
+    CELL_MUL,
+    CELL_DIV,
+    CELL_EXP,
+
+    CELL_GAMMA,
+    CELL_TRUE,
+    CELL_FALSE,
+    CELL_NIL,
+    CELL_DUMMY,
+
+    CELL_EQUIV,
+
+    CELL_YSTAR,
+
+    CELL_ID,
+    CELL_INT,
+    CELL_STR
 } CellType;
 
 typedef struct CtrlCell {
@@ -50,8 +81,6 @@ typedef struct CtrlCell {
     struct CtrlCell *next;
 } CtrlCell;
 
-CtrlCell *current_env;
+CtrlCell *init_cse_machine();
 
-void initCSEMachine();
-
-CtrlCell *generateCtrlStructs(Vertex *vertex);
+CtrlCell *generate_ctrl_structs(Vertex *vertex);
