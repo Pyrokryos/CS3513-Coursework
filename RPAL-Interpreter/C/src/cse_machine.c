@@ -516,6 +516,16 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
       B->prev->next = _then;
       B->prev = beta;
 
+      CtrlCell *right_sibling = generate_ctrl_structs(get_right_sibling(vertex));
+      CtrlCell *temp = _then->prev;
+      if (right_sibling != NULL)
+      {
+        _then->prev = right_sibling->prev;
+        right_sibling->prev->next = _then;
+        right_sibling->prev = temp;
+        temp->next = right_sibling;
+      }
+
       return _then;
     }
     else if (vertex->type == T_TAU)
@@ -530,9 +540,6 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
       Tau *tau = (Tau *)malloc(sizeof(Tau));
       if (tau == NULL)
       {
-        free(cell);
-        cell = NULL;
-
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
@@ -548,12 +555,6 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
       CtrlCell **expressions = (CtrlCell **)malloc(expr_count * sizeof(CtrlCell *));
       if (expressions == NULL)
       {
-        free(tau);
-        tau = NULL;
-
-        free(cell);
-        cell = NULL;
-
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
@@ -562,6 +563,7 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
       for (int i = 0; i < expr_count; ++i)
       {
         expressions[i] = generate_ctrl_structs(temp);
+        temp = get_right_sibling(temp);
       }
 
       tau->expressions = expressions;
@@ -570,6 +572,15 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
       cell->content.tau = tau;
       cell->prev = cell;
       cell->next = cell;
+
+      CtrlCell *right_sibling = generate_ctrl_structs(get_right_sibling(vertex));
+      if (right_sibling != NULL)
+      {
+        cell->next = right_sibling;
+        right_sibling->prev->next = cell;
+        cell->prev = right_sibling->prev;
+        right_sibling->prev = cell;
+      }
 
       return cell;
     }
@@ -649,6 +660,15 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
       cell->prev = cell;
       cell->next = cell;
 
+      CtrlCell *right_sibling = generate_ctrl_structs(get_right_sibling(vertex));
+      if (right_sibling != NULL)
+      {
+        cell->next = right_sibling;
+        right_sibling->prev->next = cell;
+        cell->prev = right_sibling->prev;
+        right_sibling->prev = cell;
+      }
+
       return cell;
     }
     else
@@ -659,7 +679,6 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
-      cell->type = vertex->type;
 
       if (vertex->type == NONE) {
         if (vertex->token->type == INTEGER)
@@ -670,6 +689,9 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
         {
           cell->content.s = strdup(vertex->token->value.s);
         }
+        cell->type = vertex->token->type;
+      } else {
+        cell->type = vertex->type;
       }
 
       CtrlCell *left_child = generate_ctrl_structs(get_left_child(vertex));
