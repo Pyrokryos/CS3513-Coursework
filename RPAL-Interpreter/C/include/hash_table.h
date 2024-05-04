@@ -5,24 +5,36 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct HashTableEntry {
-    const char *key;
-    const char *val;
+#include "defs.h"
+
+typedef struct HashTableEntry
+{
+  char *key;
+  size_t type;
+  union
+  {
+    char *s;
+    int i;
+    double d;
+  } val;
+
 } HashTableEntry;
 
-typedef struct HashTable {
-    size_t size;
-    HashTableEntry *entries;
+typedef struct HashTable
+{
+  size_t size;
+  HashTableEntry **entries;
 } HashTable;
 
-HashTable *initHashTable(size_t size);
+HashTable *init_hash_table(size_t size);
 
-static size_t hash(const char* str, size_t table_size);
+static size_t hash(char *str, size_t tbl_size);
 
-int insert(HashTable *ht, const char *key, const char *val);
+size_t insert(HashTable *ht, HashTableEntry *entry);
 
-int delete(HashTable *ht, const char *key);
+size_t delete(HashTable *ht, char *key);
 
-const char *search(HashTable *ht, const char *key);
+HashTableEntry *search(HashTable *ht, char *key);
 
-void freeHashTable(HashTable *ht);
+void free_hash_table_entry(HashTableEntry *entry);
+void free_hash_table(HashTable *ht);

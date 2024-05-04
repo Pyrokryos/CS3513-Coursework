@@ -29,7 +29,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Rule to link object files into the target executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -g $^ -o $@
+	$(CC) $(CFLAGS) -g $^ -o $@ -lm
 
 # Phony targets
 .PHONY: clean debug run test

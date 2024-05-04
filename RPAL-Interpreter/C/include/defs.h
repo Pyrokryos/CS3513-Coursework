@@ -5,102 +5,103 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct Match {
-    char *value;
-    size_t start;
-    size_t end;
+#define NONE 40
+#define YSTAR 41
+
+typedef struct Match
+{
+  const char *const value;
+  const size_t start;
+  const size_t end;
 } Match;
 
-typedef enum TokenType {
-    IDENTIFIER,
-    INTEGER,
-    KEYWORD,
-    OPERATOR,
-    PUNCTUATION,
-    STRING
+typedef enum TokenType
+{
+  IDENTIFIER = 0,
+  INTEGER,
+  KEYWORD,
+  OPERATOR,
+  PUNCTUATION,
+  STRING
 } TokenType;
 
-typedef struct Token {
-    const char *const value;
-    TokenType type;
+typedef struct Token
+{
+  TokenType type;
+  union
+  {
+    int i;
+    const char *const s;
+  } value;
 } Token;
 
-typedef struct Node {
-    Token *token;
-    struct Node *next;
+typedef struct Node
+{
+  Token *token;
+  struct Node *next;
 } Node;
 
-typedef struct LinkedList {
-    Node *head;
-    Node *tail;
-    size_t size;
+typedef struct LinkedList
+{
+  Node *head;
+  Node *tail;
+  size_t size;
 } LinkedList;
 
+// Linked list of tokens
 typedef LinkedList TokenStream;
 
-typedef enum PhraseType {
-    E_LET,
-    E_LAMBDA,
-    E_WHERE,
-    
-    T_TAU,
-    T_AUG,
-    T_COND,
+typedef enum PhraseType
+{
+  E_LET = 6,
+  E_LAMBDA,
+  E_WHERE,
 
-    B_OR,
-    B_AND,
-    B_NOT,
-    B_GR,
-    B_GE,
-    B_LS,
-    B_LE,
-    B_EQ,
-    B_NE,
+  T_TAU = 9,
+  T_AUG,
+  T_COND,
 
-    A_ADD,
-    A_SUB,
-    A_NEG,
-    A_MUL,
-    A_DIV,
-    A_EXP,
-    A_AT,
+  B_OR = 12,
+  B_AND,
+  B_NOT,
+  B_GR,
+  B_GE,
+  B_LS,
+  B_LE,
+  B_EQ,
+  B_NE,
 
-    R_GAMMA,
-    R_TRUE,
-    R_FALSE,
-    R_NIL,
-    R_DUMMY,
+  A_ADD = 21,
+  A_SUB,
+  A_NEG,
+  A_MUL,
+  A_DIV,
+  A_EXP,
+  A_AT,
 
-    D_WITHIN,
-    D_AND,
-    D_REC,
-    D_EQ,
-    D_FCN,
+  R_GAMMA = 28,
+  R_TRUE,
+  R_FALSE,
+  R_NIL,
+  R_DUMMY,
 
-    V_BRACKET,
-    V_COMMA,
+  D_WITHIN = 33,
+  D_AND,
+  D_REC,
+  D_EQ,
+  D_FCN,
 
-    Y_STAR,
-
-    NONE
+  V_BRACKET = 38,
+  V_COMMA
 } PhraseType;
 
-typedef struct Vertex {
-    PhraseType type;
-    Token *token;
-    struct Vertex *left_child;
-    struct Vertex *right_sibling;
+typedef struct Vertex
+{
+  size_t type;
+  Token *token;
+  struct Vertex *left_child;
+  struct Vertex *right_sibling;
 } Vertex;
 
-typedef struct Item {
-    Vertex* vertex;
-    struct Item* next;
-} Item;
-
-typedef struct Queue {
-    Item* head;
-    Item* tail;
-} Queue;
-
-const char *token_type_to_string(TokenType type);
-const char *phrase_type_to_string(PhraseType type);
+const char *token_type_to_string(size_t type);
+const char *phrase_type_to_string(size_t type);

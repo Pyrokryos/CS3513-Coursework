@@ -1,7 +1,15 @@
 #include "../include/tree.h"
 
+void AST(Vertex *vertex) {
+    depth_first_left_to_right_traversal(vertex, 0);
+}
+
+void ST(Vertex *vertex) {
+    depth_first_left_to_right_traversal(standardize(vertex), 0);
+}
+
 // Function to create a new vertex.
-Vertex* create_vertex(PhraseType type, Token *token) {
+Vertex* create_vertex(size_t type, Token *token) {
     Vertex* vertex = (Vertex *) malloc(sizeof(Vertex));
     if (vertex == NULL) {
         perror("Failed to allocate memory for vertex.\n");
@@ -12,7 +20,7 @@ Vertex* create_vertex(PhraseType type, Token *token) {
         vertex->type = type;
         vertex->token = NULL;
     } else {
-        vertex->type = NONE;
+        vertex->type = type;
         vertex->token = token;
     }
 
@@ -63,15 +71,17 @@ void depth_first_left_to_right_traversal(Vertex* vertex, size_t depth) {
             printf(".");
         }
         
-        if (vertex->type != NONE) {
+        if (vertex->type != YSTAR && vertex->type != NONE) {
             printf("%s\n", phrase_type_to_string(vertex->type));
+        } else if (vertex->type == YSTAR) {
+            printf("Y*\n");
         } else {
             if (vertex->token->type == IDENTIFIER) {
-                printf("<ID:%s>\n", vertex->token->value);
+                printf("<ID:%s>\n", vertex->token->value.s);
             } else if (vertex->token->type == INTEGER) {
-                printf("<INT:%s>\n", vertex->token->value);
+                printf("<INT:%d>\n", vertex->token->value.i);
             } else if (vertex->token->type == STRING) {
-                printf("<STR:%s>\n", vertex->token->value);
+                printf("<STR:%s>\n", vertex->token->value.s);
             }
         }
 
@@ -87,14 +97,21 @@ static Vertex *clone_vertex(Vertex *vertex) {
         if (vertex->type != NONE) {
             return create_vertex(vertex->type, NULL);
         } else {
-            Token temp = {strdup(vertex->token->value), vertex->token->type};
-        
             Token *token = (Token *) malloc(sizeof(Token));
             if (token == NULL) {
                 perror("Failed to allocate memory for token.\n");
                 exit(EXIT_FAILURE);
             }
-            memcpy(token, &temp, sizeof(Token));
+
+            if (vertex->token->type == INTEGER) {
+                Token temp = { .type = INTEGER, .value.i = vertex->token->value.i };
+                
+                memcpy(token, &temp, sizeof(Token));
+            } else {
+                Token temp = { .type = vertex->token->type, .value.s = strdup(vertex->token->value.s) };
+
+                memcpy(token, &temp, sizeof(Token));
+            }
 
             return create_vertex(NONE, token);
         }
@@ -219,7 +236,7 @@ Vertex *standardize(Vertex *vertex) {
         lambda = create_vertex(E_LAMBDA, NULL);
 
         Vertex *eq = create_vertex(D_EQ, NULL);
-        Vertex *yStar = create_vertex(Y_STAR, NULL);
+        Vertex *yStar = create_vertex(YSTAR, NULL);
         Vertex *_X = clone_subtree(get_left_child(get_left_child(vertex)));
 
         Vertex *X = get_left_child(get_left_child(vertex));

@@ -13,11 +13,11 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "../include/cse_machine.h"
 #include "../include/lexer.h"
 #include "../include/parser.h"
+#include "../include/cse_machine.h"
 
-#define TEST_FILE "tests/1.rpal"
+#define TEST_FILE "tests/2.rpal"
 #define MAX_FILE_SIZE 100000
 
 #include <stdio.h>
@@ -119,14 +119,9 @@ int main(int argc, char *argv[]) {
         AST(parse(stream));
     }
 
-    CtrlCell *cell = init_cse_machine();
-    CtrlCell *ctrl_structs = generate_ctrl_structs(standardize(parse(stream)));
-
-    cell->next = ctrl_structs;
-    cell->prev = cell;
-    ctrl_structs->prev->next = cell;
-    ctrl_structs->prev = cell;
-
+    // ST(standardize(parse(stream)));
+    init_cse_machine(standardize(parse(stream)));
+    eval_cse_machine();
 
     // Free the allocated memory.
     free(stream);

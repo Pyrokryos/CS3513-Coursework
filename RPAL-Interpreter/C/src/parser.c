@@ -1,17 +1,57 @@
 #include "../include/parser.h"
 
+static Node* curr;
+
 Vertex* parse(TokenStream *stream) {
     curr = stream->head;
 
     return E();
 }
 
-void AST(Vertex *vertex) {
-    depth_first_left_to_right_traversal(vertex, 0);
-}
+const char *phrase_type_to_string(size_t type) {
+    assert(type >= 6 && type <= 39);
+    switch (type) {
+        case E_LET: return "let";
+        case E_LAMBDA: return "lambda";
+        case E_WHERE: return "where";
 
-void ST(Vertex *vertex) {
-    depth_first_left_to_right_traversal(standardize(vertex), 0);
+        case T_TAU: return "tau";
+        case T_AUG: return "aug";
+        case T_COND: return "->";
+
+        case B_OR: return "or";
+        case B_AND: return "&";
+        case B_NOT: return "not";
+        case B_GR: return "gr";
+        case B_GE: return "ge";
+        case B_LS: return "ls";
+        case B_LE: return "le";
+        case B_EQ: return "eq";
+        case B_NE: return "ne";
+
+        case A_ADD: return "+";
+        case A_SUB: return "-";
+        case A_NEG: return "neg";
+        case A_MUL: return "*";
+        case A_DIV: return "/";
+        case A_EXP: return "**";
+        case A_AT: return "@";
+
+        case R_GAMMA: return "gamma";
+        case R_TRUE: return "true";
+        case R_FALSE: return "false";
+        case R_NIL: return "nil";
+        case R_DUMMY: return "dummy";
+
+        case D_WITHIN: return "within";
+        case D_AND: return "and";
+        case D_REC: return "rec";
+        case D_EQ: return "=";
+        case D_FCN: return "fcn_form";
+
+        case V_BRACKET: return "()";
+        case V_COMMA: return ",";
+    }
 }
 
 // E -> ’let’ D ’in’ E | ’fn’ Vb+ ’.’ E | Ew
@@ -19,7 +59,7 @@ static Vertex *E() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "let", 3) == 0
+        strncmp(curr->token->value.s, "let", 3) == 0
     ) {
         Vertex *let = create_vertex(E_LET, NULL);
 
@@ -30,7 +70,7 @@ static Vertex *E() {
         if (
             curr != NULL &&
             curr->token->type == KEYWORD &&
-            strncmp(curr->token->value, "in", 2) == 0
+            strncmp(curr->token->value.s, "in", 2) == 0
         ) {
             curr = curr->next;
             
@@ -44,7 +84,7 @@ static Vertex *E() {
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "fn", 2) == 0
+        strncmp(curr->token->value.s, "fn", 2) == 0
     ) {
         Vertex *lambda = create_vertex(E_LAMBDA, NULL);
 
@@ -55,7 +95,7 @@ static Vertex *E() {
         while (
             curr != NULL &&
             curr->token->type == IDENTIFIER ||
-            curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
+            curr->token->type == PUNCTUATION && strncmp(curr->token->value.s, "(", 1) == 0
         ) {
             if (iter == 0) {
                 add_left_child(temp, Vb());
@@ -75,7 +115,7 @@ static Vertex *E() {
         if (
             curr != NULL &&
             curr->token->type == OPERATOR &&
-            strncmp(curr->token->value, ".", 1) == 0
+            strncmp(curr->token->value.s, ".", 1) == 0
         ) {
             curr = curr->next;
 
@@ -97,7 +137,7 @@ static Vertex *Ew() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "where", 5) == 0
+        strncmp(curr->token->value.s, "where", 5) == 0
     ) {
         Vertex* where = create_vertex(E_WHERE, NULL);
 
@@ -120,7 +160,7 @@ static Vertex *T() {
     while (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
-        strncmp(curr->token->value, ",", 1) == 0
+        strncmp(curr->token->value.s, ",", 1) == 0
     ) {
         if (iter == 0) {
             tau = create_vertex(T_TAU, NULL);
@@ -151,7 +191,7 @@ static Vertex *Ta() {
     while (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "aug", 3) == 0
+        strncmp(curr->token->value.s, "aug", 3) == 0
     ) {
         aug = create_vertex(T_AUG, NULL);
 
@@ -175,7 +215,7 @@ static Vertex *Tc() {
     if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
-        strncmp(curr->token->value, "->", 2) == 0
+        strncmp(curr->token->value.s, "->", 2) == 0
     ) {
         Vertex* arrow = create_vertex(T_COND, NULL);
 
@@ -187,7 +227,7 @@ static Vertex *Tc() {
         if (
             curr != NULL &&
             curr->token->type == OPERATOR &&
-            strncmp(curr->token->value, "|", 1) == 0
+            strncmp(curr->token->value.s, "|", 1) == 0
         ) {
             curr = curr->next;
             
@@ -211,7 +251,7 @@ static Vertex *B() {
     while (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "or", 2) == 0
+        strncmp(curr->token->value.s, "or", 2) == 0
     ) {
         or = create_vertex(B_OR, NULL);
 
@@ -236,7 +276,7 @@ static Vertex *Bt() {
     while (
         curr != NULL &&
         curr->token->type == OPERATOR &&
-        strncmp(curr->token->value, "&", 1) == 0
+        strncmp(curr->token->value.s, "&", 1) == 0
     ) {
         and = create_vertex(B_AND, NULL);
 
@@ -258,7 +298,7 @@ static Vertex *Bs() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "not", 3) == 0
+        strncmp(curr->token->value.s, "not", 3) == 0
     ) {
         Vertex *not = create_vertex(B_NOT, NULL);
 
@@ -286,8 +326,8 @@ static Vertex *Bp() {
 
     if (
         curr != NULL && (
-            curr->token->type == KEYWORD && strncmp(curr->token->value, "gr", 2) == 0 ||
-            curr->token->type == OPERATOR && strncmp(curr->token->value, ">", 1) == 0
+            curr->token->type == KEYWORD && strncmp(curr->token->value.s, "gr", 2) == 0 ||
+            curr->token->type == OPERATOR && strncmp(curr->token->value.s, ">", 1) == 0
         )
     ) {
         Vertex *gr = create_vertex(B_GR, NULL);
@@ -299,8 +339,8 @@ static Vertex *Bp() {
         return gr;
     } else if (
         curr != NULL && (
-            curr->token->type == KEYWORD && strncmp(curr->token->value, "ge", 2) == 0 ||
-            curr->token->type == OPERATOR && strncmp(curr->token->value, ">=", 2) == 0
+            curr->token->type == KEYWORD && strncmp(curr->token->value.s, "ge", 2) == 0 ||
+            curr->token->type == OPERATOR && strncmp(curr->token->value.s, ">=", 2) == 0
         )
     ) {
         Vertex *ge = create_vertex(B_GE, NULL);
@@ -312,8 +352,8 @@ static Vertex *Bp() {
         return ge;
     } else if (
         curr != NULL && (
-            curr->token->type == KEYWORD && strncmp(curr->token->value, "ls", 2) == 0 ||
-            curr->token->type == OPERATOR && strncmp(curr->token->value, "<", 1) == 0
+            curr->token->type == KEYWORD && strncmp(curr->token->value.s, "ls", 2) == 0 ||
+            curr->token->type == OPERATOR && strncmp(curr->token->value.s, "<", 1) == 0
         )
     ) {
         Vertex *ls = create_vertex(B_LS, NULL);
@@ -325,8 +365,8 @@ static Vertex *Bp() {
         return ls;
     } else if (
         curr != NULL && (
-            curr->token->type == KEYWORD && strncmp(curr->token->value, "le", 2) == 0 ||
-            curr->token->type == OPERATOR && strncmp(curr->token->value, "<=", 2) == 0
+            curr->token->type == KEYWORD && strncmp(curr->token->value.s, "le", 2) == 0 ||
+            curr->token->type == OPERATOR && strncmp(curr->token->value.s, "<=", 2) == 0
         )
     ) {
         Vertex *le = create_vertex(B_LE, NULL);
@@ -339,7 +379,7 @@ static Vertex *Bp() {
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "eq", 2) == 0
+        strncmp(curr->token->value.s, "eq", 2) == 0
     ) {
         Vertex *eq = create_vertex(B_EQ, NULL);
         curr = curr->next;
@@ -351,7 +391,7 @@ static Vertex *Bp() {
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "ne", 2) == 0
+        strncmp(curr->token->value.s, "ne", 2) == 0
     ) {
         Vertex *ne = create_vertex(B_NE, NULL);
         curr = curr->next;
@@ -377,15 +417,15 @@ static Vertex *A() {
     if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
-        strncmp(curr->token->value, "+", 1) == 0
+        strncmp(curr->token->value.s, "+", 1) == 0
     ) {
         curr = curr->next;
         temp = At();
     } else if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
-        strncmp(curr->token->value, "-", 1) == 0 &&
-        strncmp(curr->token->value, "->", 2) != 0
+        strncmp(curr->token->value.s, "-", 1) == 0 &&
+        strncmp(curr->token->value.s, "->", 2) != 0
     ) {
         Vertex *neg = create_vertex(A_NEG, NULL);
 
@@ -402,13 +442,13 @@ static Vertex *A() {
     Vertex *add_sub;
     while (
         curr != NULL && (
-            curr->token->type == OPERATOR && strncmp(curr->token->value, "+", 1) == 0 || (
-                curr->token->type == OPERATOR && strncmp(curr->token->value, "-", 1) == 0 &&
-                strncmp(curr->token->value, "->", 2) != 0
+            curr->token->type == OPERATOR && strncmp(curr->token->value.s, "+", 1) == 0 || (
+                curr->token->type == OPERATOR && strncmp(curr->token->value.s, "-", 1) == 0 &&
+                strncmp(curr->token->value.s, "->", 2) != 0
             )
         )
     ) {
-        if (strncmp(curr->token->value, "+", 1) == 0) {
+        if (strncmp(curr->token->value.s, "+", 1) == 0) {
             add_sub = create_vertex(A_ADD, NULL);
         } else {
             add_sub = create_vertex(A_SUB, NULL);
@@ -438,11 +478,11 @@ static Vertex *At() {
     Vertex *temp = Af();
     while (
         curr != NULL && (
-            curr->token->type == OPERATOR && strncmp(curr->token->value, "*", 1) == 0 ||
-            curr->token->type == OPERATOR && strncmp(curr->token->value, "/", 1) == 0
+            curr->token->type == OPERATOR && strncmp(curr->token->value.s, "*", 1) == 0 ||
+            curr->token->type == OPERATOR && strncmp(curr->token->value.s, "/", 1) == 0
         )
     ) {
-        if (strncmp(curr->token->value, "*", 1) == 0) {
+        if (strncmp(curr->token->value.s, "*", 1) == 0) {
             mul_div = create_vertex(A_MUL, NULL);
         } else {
             mul_div = create_vertex(A_DIV, NULL);
@@ -469,7 +509,7 @@ static Vertex *Af() {
     if (
         curr != NULL &&
         curr->token->type == OPERATOR &&
-        strncmp(curr->token->value, "**", 2) == 0
+        strncmp(curr->token->value.s, "**", 2) == 0
     ) {
         Vertex *exp = create_vertex(A_EXP, NULL);
 
@@ -494,7 +534,7 @@ static Vertex *Ap() {
     while (
         curr != NULL &&
         curr->token->type == OPERATOR &&
-        strncmp(curr->token->value, "@", 1) == 0
+        strncmp(curr->token->value.s, "@", 1) == 0
     ) {
         at = create_vertex(A_AT, NULL);
 
@@ -538,13 +578,13 @@ static Vertex *R() {
             curr->token->type == INTEGER ||
             curr->token->type == STRING || (
                 curr->token->type == KEYWORD && (
-                    strncmp(curr->token->value, "true", 4) == 0 ||
-                    strncmp(curr->token->value, "false", 5) == 0 ||
-                    strncmp(curr->token->value, "nil", 3) == 0 ||
-                    strncmp(curr->token->value, "dummy", 5) == 0
+                    strncmp(curr->token->value.s, "true", 4) == 0 ||
+                    strncmp(curr->token->value.s, "false", 5) == 0 ||
+                    strncmp(curr->token->value.s, "nil", 3) == 0 ||
+                    strncmp(curr->token->value.s, "dummy", 5) == 0
                 )
             ) ||
-            curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
+            curr->token->type == PUNCTUATION && strncmp(curr->token->value.s, "(", 1) == 0
         )
     ) {
         gamma = create_vertex(R_GAMMA, NULL);
@@ -590,7 +630,7 @@ static Vertex *Rn() {
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "true", 4) == 0
+        strncmp(curr->token->value.s, "true", 4) == 0
     ) {
         Vertex *_true = create_vertex(R_TRUE, NULL);
 
@@ -600,7 +640,7 @@ static Vertex *Rn() {
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "false", 5) == 0
+        strncmp(curr->token->value.s, "false", 5) == 0
     ) {
         Vertex *_false = create_vertex(R_FALSE, NULL);
 
@@ -610,7 +650,7 @@ static Vertex *Rn() {
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "nil", 3) == 0
+        strncmp(curr->token->value.s, "nil", 3) == 0
     ) {
         Vertex *nil = create_vertex(R_NIL, NULL);
 
@@ -620,7 +660,7 @@ static Vertex *Rn() {
     } else if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "dummy", 5) == 0
+        strncmp(curr->token->value.s, "dummy", 5) == 0
     ) {
         Vertex *dummy = create_vertex(R_DUMMY, NULL);
 
@@ -630,7 +670,7 @@ static Vertex *Rn() {
     } else if (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
-        strncmp(curr->token->value, "(", 1) == 0
+        strncmp(curr->token->value.s, "(", 1) == 0
     ) {
         curr = curr->next;
         
@@ -639,7 +679,7 @@ static Vertex *Rn() {
         if (
             curr != NULL &&
             curr->token->type == PUNCTUATION &&
-            strncmp(curr->token->value, ")", 1) == 0
+            strncmp(curr->token->value.s, ")", 1) == 0
         ) {
             curr = curr->next;
 
@@ -661,7 +701,7 @@ static Vertex *D() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "within", 6) == 0
+        strncmp(curr->token->value.s, "within", 6) == 0
     ) {
         Vertex *within = create_vertex(D_WITHIN, NULL);
 
@@ -687,7 +727,7 @@ static Vertex *Da() {
     while (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "and", 3) == 0
+        strncmp(curr->token->value.s, "and", 3) == 0
     ) {
         if (iter == 0) {
             and = create_vertex(D_AND, NULL);
@@ -718,7 +758,7 @@ static Vertex *Dr() {
     if (
         curr != NULL &&
         curr->token->type == KEYWORD &&
-        strncmp(curr->token->value, "rec", 3) == 0
+        strncmp(curr->token->value.s, "rec", 3) == 0
     ) {
         Vertex* rec = create_vertex(D_REC, NULL);
 
@@ -743,7 +783,7 @@ static Vertex *Db() {
     if (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
-        strncmp(curr->token->value, "(", 1) == 0
+        strncmp(curr->token->value.s, "(", 1) == 0
     ) {
         curr = curr->next;
         
@@ -752,7 +792,7 @@ static Vertex *Db() {
         if (
             curr != NULL &&
             curr->token->type == PUNCTUATION &&
-            strncmp(curr->token->value, ")", 1) == 0
+            strncmp(curr->token->value.s, ")", 1) == 0
         ) {
             curr = curr->next;
 
@@ -771,8 +811,8 @@ static Vertex *Db() {
 
         if (
             curr != NULL && (
-                curr->token->type == PUNCTUATION && strncmp(curr->token->value, ",", 1) == 0 ||
-                curr->token->type == OPERATOR && strncmp(curr->token->value, "=", 1) == 0
+                curr->token->type == PUNCTUATION && strncmp(curr->token->value.s, ",", 1) == 0 ||
+                curr->token->type == OPERATOR && strncmp(curr->token->value.s, "=", 1) == 0
             )
         ) {
             size_t iter = 0;
@@ -781,7 +821,7 @@ static Vertex *Db() {
             while (
                 curr != NULL &&
                 curr->token->type == PUNCTUATION &&
-                strncmp(curr->token->value, ",", 1) == 0
+                strncmp(curr->token->value.s, ",", 1) == 0
             ) {
                 comma = create_vertex(V_COMMA, NULL);
 
@@ -815,7 +855,7 @@ static Vertex *Db() {
             if (
                 curr != NULL &&
                 curr->token->type == OPERATOR &&
-                strncmp(curr->token->value, "=", 1) == 0
+                strncmp(curr->token->value.s, "=", 1) == 0
             ) {
                 Vertex *eq = create_vertex(D_EQ, NULL);
 
@@ -840,7 +880,7 @@ static Vertex *Db() {
             while (
                 curr != NULL && (
                     curr->token->type == IDENTIFIER ||
-                    curr->token->type == PUNCTUATION && strncmp(curr->token->value, "(", 1) == 0
+                    curr->token->type == PUNCTUATION && strncmp(curr->token->value.s, "(", 1) == 0
                 )
             ) {
                 add_right_sibling(temp, Vb());
@@ -856,7 +896,7 @@ static Vertex *Db() {
             if (
                 curr != NULL &&
                 curr->token->type == OPERATOR &&
-                strncmp(curr->token->value, "=", 1) == 0
+                strncmp(curr->token->value.s, "=", 1) == 0
             ) {
                 curr = curr->next;
 
@@ -889,14 +929,14 @@ static Vertex *Vb() {
     } else if (
         curr != NULL &&
         curr->token->type == PUNCTUATION &&
-        strncmp(curr->token->value, "(", 1) == 0
+        strncmp(curr->token->value.s, "(", 1) == 0
     ) {
         curr = curr->next;
 
         if (
             curr != NULL &&
             curr->token->type == PUNCTUATION &&
-            strncmp(curr->token->value, ")", 1) == 0
+            strncmp(curr->token->value.s, ")", 1) == 0
         ) {
             Vertex *bracket = create_vertex(V_BRACKET, NULL);
 
@@ -910,7 +950,7 @@ static Vertex *Vb() {
             if (
                 curr != NULL &&
                 curr->token->type == PUNCTUATION &&
-                strncmp(curr->token->value, ")", 1) == 0
+                strncmp(curr->token->value.s, ")", 1) == 0
             ) {
                 curr = curr->next;
 
@@ -943,7 +983,7 @@ static Vertex *Vl() {
         while (
             curr != NULL &&
             curr->token->type == PUNCTUATION &&
-            strncmp(curr->token->value, ",", 1) == 0
+            strncmp(curr->token->value.s, ",", 1) == 0
         ) {
             curr = curr->next;
 

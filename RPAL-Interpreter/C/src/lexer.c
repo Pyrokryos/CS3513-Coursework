@@ -24,7 +24,7 @@ TokenStream *lex(char *input) {
         } else if (is_letter(input)) {
             input = identify_identifier(input, stream);
 
-            if (keyword_length(stream->tail->token->value) == strlen(stream->tail->token->value)) {
+            if (keyword_length(stream->tail->token->value.s) == strlen(stream->tail->token->value.s)) {
                 stream->tail->token->type = KEYWORD;
             }
         } else if (is_operator(input)) {
@@ -43,11 +43,23 @@ TokenStream *lex(char *input) {
     return stream;
 }
 
+const char *token_type_to_string(size_t type) {
+    assert(type >= 0 && type <= 5);
+    switch (type) {
+        case IDENTIFIER: return "IDENTIFIER";
+        case INTEGER: return "INTEGER";
+        case KEYWORD: return "KEYWORD";
+        case OPERATOR: return "OPERATOR";
+        case PUNCTUATION: return "PUNCTUATION";
+        case STRING: return "STRING";
+    }
+}
+
 static regex_t *compile_regex(const char *pattern) {
     regex_t *regex = (regex_t *)malloc(sizeof(regex_t));
 
     if (regex == NULL) {
-        perror("Failed to allocate memory for regex.");
+        perror("Failed to allocate memory for regex");
         exit(EXIT_FAILURE);
     } else {
         int reti = regcomp(regex, pattern, REG_EXTENDED);
@@ -81,19 +93,21 @@ static Match *match_regex(const regex_t *regex, const char *input) {
         Match *result = (Match *)malloc(sizeof(Match));
 
         if (result == NULL) {
-            perror("Failed to allocate memory for match.");
+            perror("Failed to allocate memory for match");
             exit(EXIT_FAILURE);
         } else {
-            result->value = (char *)malloc(match.rm_eo - match.rm_so + 1);
+            char *value = (char *)malloc(match.rm_eo - match.rm_so + 1);
 
-            if (result->value == NULL) {
-                perror("Failed to allocate memory for match value.");
+            if (value == NULL) {
+                perror("Failed to allocate memory for value");
                 exit(EXIT_FAILURE);
             } else {
-                strncpy(result->value, input, match.rm_eo - match.rm_so);
-                result->value[match.rm_eo - match.rm_so] = '\0';
-                result->start = match.rm_so;
-                result->end = match.rm_eo - 1;
+                strncpy(value, input, match.rm_eo - match.rm_so);
+                value[match.rm_eo - match.rm_so] = '\0';
+
+                Match temp = { .value=value, .start=match.rm_so, .end=match.rm_eo - 1 };
+
+                memcpy(result, &temp, sizeof(Match));
 
                 return result;
             }
@@ -192,10 +206,10 @@ static char* identify_identifier(char* input, TokenStream* stream) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
-            perror("Failed to allocate memory for token.");
+            perror("Failed to allocate memory for token");
             exit(EXIT_FAILURE);
         } else {
-            Token temp = { match->value, IDENTIFIER };
+            Token temp = { .type=IDENTIFIER, .value.s=match->value };
             memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
@@ -220,14 +234,15 @@ static char* identify_integer(char* input, TokenStream* stream) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
-            perror("Failed to allocate memory for token.");
+            perror("Failed to allocate memory for token");
             exit(EXIT_FAILURE);
         } else {
-            Token temp = { match->value, INTEGER };
+            Token temp = { .type=INTEGER, .value.i=atoi((const char *) (match->value)) };
             memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
 
+            free(match->value);
             free(match);
             return input + match->end + 1;
         }
@@ -244,10 +259,10 @@ static char* identify_operator(char* input, TokenStream* stream) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
-            perror("Failed to allocate memory for token.");
+            perror("Failed to allocate memory for token");
             exit(EXIT_FAILURE);
         } else {
-            Token temp = { match->value, OPERATOR };
+            Token temp = { .type=OPERATOR, .value.s=match->value };
             memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
@@ -273,10 +288,10 @@ static char* identify_punctuation(char* input, TokenStream* stream) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
-            perror("Failed to allocate memory for token.");
+            perror("Failed to allocate memory for token");
             exit(EXIT_FAILURE);
         } else {
-            Token temp = { match->value, PUNCTUATION };
+            Token temp = { .type=PUNCTUATION, .value.s=match->value };
             memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);
@@ -301,10 +316,10 @@ static char* identify_string(char* input, TokenStream* stream) {
         Token *token = (Token *)malloc(sizeof(Token));
 
         if (token == NULL) {
-            perror("Failed to allocate memory for token.");
+            perror("Failed to allocate memory for token");
             exit(EXIT_FAILURE);
         } else {
-            Token temp = { match->value, STRING };
+            Token temp = { .type=STRING, .value.s=match->value };
             memcpy(token, &temp, sizeof(Token));
 
             insert_at_end(stream, token);

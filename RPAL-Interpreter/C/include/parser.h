@@ -1,16 +1,13 @@
 #pragma once
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "defs.h"
 #include "tree.h"
 
-static Node* curr;
-
-Vertex* parse(TokenStream* stream);
-void AST(Vertex* vertex);
-void ST(Vertex* vertex);
+Vertex *parse(TokenStream* stream);
 
 /* Expressions */
 static Vertex *E();
