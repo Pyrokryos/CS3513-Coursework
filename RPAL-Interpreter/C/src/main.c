@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
         AST(parse(stream));
     }
 
-    // ST(standardize(parse(stream)));
+    ST(standardize(parse(stream)));
     init_cse_machine(standardize(parse(stream)));
     eval_cse_machine();
 

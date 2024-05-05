@@ -50,7 +50,7 @@ size_t insert(HashTable *ht, HashTableEntry *entry)
   size_t index = hash(entry->key, ht->size);
   size_t original_index = index;
 
-  while (ht->entries[index]->key != NULL)
+  while (ht->entries[index] != NULL)
   {
     if (strcmp(ht->entries[index]->key, entry->key) == 0)
     {
@@ -77,7 +77,7 @@ size_t delete(HashTable *ht, char *key)
   size_t index = hash(key, ht->size);
   size_t original_index = index;
 
-  while (ht->entries[index]->key != NULL)
+  while (ht->entries[index] != NULL)
   {
     if (strcmp(ht->entries[index]->key, key) == 0)
     {
@@ -101,7 +101,7 @@ HashTableEntry *search(HashTable *ht, char *key)
   size_t index = hash(key, ht->size);
   size_t original_index = index;
 
-  while (ht->entries[index]->key != NULL)
+  while (ht->entries[index] != NULL)
   {
     if (strcmp(ht->entries[index]->key, key) == 0)
     {

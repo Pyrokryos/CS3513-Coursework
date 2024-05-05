@@ -166,10 +166,112 @@ void eval_cse_machine()
   {
     current_cell = current_cell->prev;
   }
+  else if (current_cell->type == A_ADD) {
+    CtrlCell *cell = (CtrlCell *)malloc(sizeof(CtrlCell));
+
+    if (current_cell->next->type == INTEGER && current_cell->next->next->type == INTEGER)
+    {
+      cell->type = INTEGER;
+      cell->content.i = current_cell->next->content.i + current_cell->next->next->content.i;
+    } else if (current_cell->next->type == INTEGER && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = (double)current_cell->next->content.i + current_cell->next->next->content.d;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == INTEGER) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d + (double)current_cell->next->next->content.i;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d + current_cell->next->next->content.d;
+    }
+
+    cell->prev = current_cell->prev;
+    cell->next = current_cell->next->next->next;
+
+    current_cell->prev->next = cell;
+    current_cell->next->next->next->prev = cell;
+
+    current_cell = current_cell->prev;
+  }
+  else if (current_cell->type == A_SUB) {
+    CtrlCell *cell = (CtrlCell *)malloc(sizeof(CtrlCell));
+
+    if (current_cell->next->type == INTEGER && current_cell->next->next->type == INTEGER)
+    {
+      cell->type = INTEGER;
+      cell->content.i = current_cell->next->content.i - current_cell->next->next->content.i;
+    } else if (current_cell->next->type == INTEGER && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = (double)current_cell->next->content.i - current_cell->next->next->content.d;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == INTEGER) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d - (double)current_cell->next->next->content.i;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d - current_cell->next->next->content.d;
+    }
+
+    cell->prev = current_cell->prev;
+    cell->next = current_cell->next->next->next;
+
+    current_cell->prev->next = cell;
+    current_cell->next->next->next->prev = cell;
+
+    current_cell = current_cell->prev;
+  }
+  else if (current_cell->type == A_MUL) {
+    CtrlCell *cell = (CtrlCell *)malloc(sizeof(CtrlCell));
+
+    if (current_cell->next->type == INTEGER && current_cell->next->next->type == INTEGER)
+    {
+      cell->type = INTEGER;
+      cell->content.i = current_cell->next->content.i * current_cell->next->next->content.i;
+    } else if (current_cell->next->type == INTEGER && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = (double)current_cell->next->content.i * current_cell->next->next->content.d;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == INTEGER) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d * (double)current_cell->next->next->content.i;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d * current_cell->next->next->content.d;
+    }
+
+    cell->prev = current_cell->prev;
+    cell->next = current_cell->next->next->next;
+
+    current_cell->prev->next = cell;
+    current_cell->next->next->next->prev = cell;
+
+    current_cell = current_cell->prev;
+  }
+  else if (current_cell->type == A_DIV) {
+    CtrlCell *cell = (CtrlCell *)malloc(sizeof(CtrlCell));
+
+    if (current_cell->next->type == INTEGER && current_cell->next->next->type == INTEGER)
+    {
+      cell->type = INTEGER;
+      cell->content.i = current_cell->next->content.i / current_cell->next->next->content.i;
+    } else if (current_cell->next->type == INTEGER && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = (double)current_cell->next->content.i / current_cell->next->next->content.d;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == INTEGER) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d / (double)current_cell->next->next->content.i;
+    } else if (current_cell->next->type == DOUBLE && current_cell->next->next->type == DOUBLE) {
+      cell->type = DOUBLE;
+      cell->content.d = current_cell->next->content.d / current_cell->next->next->content.d;
+    }
+
+    cell->prev = current_cell->prev;
+    cell->next = current_cell->next->next->next;
+
+    current_cell->prev->next = cell;
+    current_cell->next->next->next->prev = cell;
+
+    current_cell = current_cell->prev;
+  }
   else if (current_cell->type == A_EXP)
   {
-    assert((current_cell->next->type == INTEGER || current_cell->next->type == DOUBLE) && (current_cell->next->next->type == INTEGER || current_cell->next->next->type == DOUBLE));
-
     CtrlCell *cell = (CtrlCell *)malloc(sizeof(CtrlCell));
 
     if (current_cell->next->type == INTEGER && current_cell->next->next->type == INTEGER)
@@ -197,19 +299,56 @@ void eval_cse_machine()
   } 
   else if (current_cell->type == R_GAMMA)
   {
-    if (current_cell->next->type == LAMBDA)
+    
+    if (current_cell->next->type == IDENTIFIER) {
+      CtrlCell *cell = current_cell->next;
+
+      if (strncmp(cell->content.s, "Print", 5) == 0)
+      {
+        if (cell->next->type == TAU)
+        {
+          Tau *tau = cell->next->content.tau;
+          for (size_t i = 0; i < tau->expr_cnt; i++)
+          {
+            if (tau->expressions[i]->type == INTEGER)
+            {
+              printf("%d ", tau->expressions[i]->content.i);
+            }
+            else if (tau->expressions[i]->type == STRING)
+            {
+              printf("%s\n", tau->expressions[i]->content.s);
+            } 
+            else if (tau->expressions[i]->type == DOUBLE) {
+              printf("%lf\n", tau->expressions[i]->content.d);
+            }
+          }
+          printf("\n");
+        }
+        else if (cell->next->type == INTEGER)
+        {
+          printf("%d\n", cell->next->content.i);
+        }
+        else if (cell->next->type == STRING)
+        {
+          printf("%s\n", cell->next->content.s);
+        } 
+        else if (cell->next->type == DOUBLE) {
+          printf("%lf\n", cell->next->content.d);
+        }
+
+        current_cell = current_cell->prev;
+        
+        current_cell->next = cell->next->next;
+        cell->next->next->prev = current_cell;
+      }
+    }
+    else if (current_cell->next->type == LAMBDA)
     {
       Lambda *lambda = current_cell->next->content.lambda;
 
       CtrlCell *c1 = (CtrlCell *)malloc(sizeof(CtrlCell));
       if (c1 == NULL)
       {
-        free(current_cell);
-        current_cell = NULL;
-
-        free(current_env);
-        current_env = NULL;
-
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
@@ -217,15 +356,6 @@ void eval_cse_machine()
       CtrlCell *c2 = (CtrlCell *)malloc(sizeof(CtrlCell));
       if (c2 == NULL)
       {
-        free(current_cell);
-        current_cell = NULL;
-
-        free(current_env);
-        current_env = NULL;
-
-        free(c1);
-        c1 = NULL;
-
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
@@ -233,18 +363,6 @@ void eval_cse_machine()
       Env *e1 = (Env *)malloc(sizeof(Env));
       if (e1 == NULL)
       {
-        free(current_cell);
-        current_cell = NULL;
-
-        free(current_env);
-        current_env = NULL;
-
-        free(c1);
-        c1 = NULL;
-
-        free(c2);
-        c2 = NULL;
-
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
@@ -252,21 +370,6 @@ void eval_cse_machine()
       Env *e2 = (Env *)malloc(sizeof(Env));
       if (e2 == NULL)
       {
-        free(current_cell);
-        current_cell = NULL;
-
-        free(current_env);
-        current_env = NULL;
-
-        free(c1);
-        c1 = NULL;
-
-        free(c2);
-        c2 = NULL;
-
-        free(e1);
-        e1 = NULL;
-
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
@@ -379,45 +482,68 @@ void eval_cse_machine()
       c1->prev = current_cell->prev;
       c1->next = current_cell->next->content.lambda->body;
 
-      c2->prev = current_cell->next->content.lambda->body->prev->next;
+      c2->prev = current_cell->next->content.lambda->body->prev;
       c2->next = current_cell->next->next->next;
 
       current_cell->next->content.lambda->body->prev->next = c2;
       current_cell->next->content.lambda->body->prev = c1;
 
       current_cell->prev->next = c1;
+      c2->next->prev = c2;
 
-      current_cell = current_cell->prev;
+      current_cell = c2->prev;
       current_env = c1;
     }
   }
+  else if (
+    current_cell->type == ENV &&
+    current_cell->content.env->id != 0)
+  {
+    CtrlCell *temp;
+    if (current_cell->next->type == ENV) {
+      current_cell->next->next->prev = current_cell->prev;
+      current_cell->prev->next = current_cell->next->next;
+    } else {
+      temp = current_cell->next->next;
+
+      temp->next->prev = temp->prev;
+      temp->prev->next = temp->next;
+
+      current_cell->next->prev = current_cell->prev;
+      current_cell->prev->next = current_cell->next;
+    }
+
+    current_cell = current_cell->prev;
+    current_env = current_env->prev;
+  }
   else if (current_cell->type == TAU)
   {
+    CtrlCell *temp;
+
     Tau *tau = current_cell->content.tau;
 
-    if (
-      current_cell->prev->type == IDENTIFIER &&
-      strncmp(current_cell->prev->content.s, "Print", 5) == 0) 
+    temp = current_cell->next;
+    for (size_t i = 0; i < tau->expr_cnt; i++)
     {
-      for (size_t i = 0; i < sizeof(tau->expressions) / sizeof(tau->expressions[0]); ++i)
-      {
-        if (tau->expressions[i]->type == INTEGER)
-        {
-          printf("%d ", tau->expressions[i]->content.i);
-        }
-        else if (tau->expressions[i]->type == STRING)
-        {
-          printf("%s\n", tau->expressions[i]->content.s);
-        } 
-        else if (tau->expressions[i]->type == DOUBLE) {
-          printf("%lf\n", tau->expressions[i]->content.d);
-        }
-      }
+      tau->expressions[i] = temp;
+      temp = temp->next;
     }
+
+    current_cell->next = temp;
+    temp->prev = current_cell;
+
+    current_cell = current_cell->prev;
   }
   else if (current_cell->type == LAMBDA)
   {
     current_cell = current_cell->prev;
+  }
+
+  if (
+    current_cell->type != ENV || 
+    current_cell->content.env->id != 0)
+  {
+    eval_cse_machine();
   }
 }
 
@@ -530,6 +656,9 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
     }
     else if (vertex->type == T_TAU)
     {
+      CtrlCell *t1, *t2;
+      Vertex *v1;
+
       CtrlCell *cell = (CtrlCell *)malloc(sizeof(CtrlCell));
       if (cell == NULL)
       {
@@ -544,42 +673,43 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex)
         exit(EXIT_FAILURE);
       }
 
-      size_t expr_count = 1;
-      Vertex *temp = get_right_sibling(get_left_child(vertex));
-      while (temp != NULL)
+      cell->type = TAU;
+      cell->content.tau = tau;
+
+      size_t expr_cnt = 1;
+      v1 = get_right_sibling(get_left_child(vertex));
+      while (v1 != NULL)
       {
-        expr_count++;
-        temp = get_right_sibling(temp);
+        expr_cnt++;
+        v1 = get_right_sibling(v1);
       }
 
-      CtrlCell **expressions = (CtrlCell **)malloc(expr_count * sizeof(CtrlCell *));
+      CtrlCell **expressions = (CtrlCell **)malloc(expr_cnt * sizeof(CtrlCell *));
       if (expressions == NULL)
       {
         perror("Memory allocation failed.\n");
         exit(EXIT_FAILURE);
       }
 
-      temp = get_left_child(vertex);
-      for (int i = 0; i < expr_count; ++i)
-      {
-        expressions[i] = generate_ctrl_structs(temp);
-        temp = get_right_sibling(temp);
-      }
-
+      tau->expr_cnt = expr_cnt;
       tau->expressions = expressions;
 
-      cell->type = TAU;
-      cell->content.tau = tau;
-      cell->prev = cell;
-      cell->next = cell;
+      t1 = generate_ctrl_structs(get_left_child(vertex));
 
-      CtrlCell *right_sibling = generate_ctrl_structs(get_right_sibling(vertex));
-      if (right_sibling != NULL)
+      cell->prev = t1->prev;
+      t1->prev->next = cell;
+      t1->prev = cell;
+      cell->next = t1;
+
+      t1 = generate_ctrl_structs(get_right_sibling(vertex));
+      if (t1 != NULL)
       {
-        cell->next = right_sibling;
-        right_sibling->prev->next = cell;
-        cell->prev = right_sibling->prev;
-        right_sibling->prev = cell;
+        t2 = cell->prev;
+
+        cell->prev = t1->prev;
+        t1->prev->next = cell;
+        t1->prev = t2;
+        t2->next = t1;
       }
 
       return cell;

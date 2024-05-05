@@ -27,11 +27,13 @@ typedef struct Delta
 
 typedef struct Tau
 {
+  size_t expr_cnt;
   CtrlCell **expressions;
 } Tau;
 
 typedef struct Lambda
 {
+  size_t param_cnt;
   char **params;
   CtrlCell *body;
 } Lambda;
