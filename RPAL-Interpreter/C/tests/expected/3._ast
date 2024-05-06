@@ -1,12 +1,6 @@
-gamma
-.lambda
+let
+.fcn_form
 ..<ID:Abs>
-..gamma
-...<ID:Print>
-...-
-....<ID:Abs>
-....<INT:3>
-.lambda
 ..<ID:N>
 ..->
 ...ls
@@ -15,4 +9,10 @@ gamma
 ...neg
 ....<ID:N>
 ...<ID:N>
+.gamma
+..<ID:Print>
+..gamma
+...<ID:Abs>
+...neg
+....<INT:3>
 
