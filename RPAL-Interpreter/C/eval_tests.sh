@@ -68,6 +68,11 @@ for i in $(seq 1 $file_cnt); do
         echo "Failed to generate AST output file for 'tests/$i.rpal'."
         exit 1
     }
+    ./myrpal -st "tests/$i.rpal" > "tests/generated/$i.st" || {
+        echo "Failed to generate ST output file for 'tests/$i.rpal'."
+        exit 1
+    }
+
 
     # Check if the expected files exist.
     if [[ ! -f "tests/expected/$i.lex" ]]; then
@@ -78,10 +83,15 @@ for i in $(seq 1 $file_cnt); do
         echo "Expected AST output file 'tests/expected/$i.ast' does not exist."
         exit 1
     fi
+    if [[ ! -f "tests/expected/$i.st" ]]; then
+        echo "Expected ST output file 'tests/expected/$i.st' does not exist."
+        exit 1
+    fi
 
     # Compare the generated files with the expected files and write differences to .diff files if there is a difference.
     lex_diff=$(diff "tests/generated/$i.lex" "tests/expected/$i.lex")
     ast_diff=$(diff "tests/generated/$i.ast" "tests/expected/$i.ast")
+    st_diff=$(diff "tests/generated/$i.st" "tests/expected/$i.st")
 
     # Output differences to .diff files if any.
     if [[ -n "$lex_diff" ]]; then
@@ -90,9 +100,12 @@ for i in $(seq 1 $file_cnt); do
     if [[ -n "$ast_diff" ]]; then
         echo "$ast_diff" > "tests/generated/$i.ast.diff"
     fi
+    if [[ -n "$st_diff" ]]; then
+        echo "$st_diff" > "tests/generated/$i.st.diff"
+    fi
 
     # Determine test case pass/fail based on the presence of .diff files.
-    if [[ -f "tests/generated/$i.lex.diff" || -f "tests/generated/$i.ast.diff" ]]; then
+    if [[ -f "tests/generated/$i.lex.diff" || -f "tests/generated/$i.ast.diff" || -f "tests/generated/$i.st.diff" ]]; then
         echo "Test case 'tests/$i.rpal' failed."
     else
         echo "Test case 'tests/$i.rpal' passed."
@@ -103,6 +116,7 @@ for i in $(seq 1 $file_cnt); do
     if "$diff_only" == true; then
         rm "tests/generated/$i.lex"
         rm "tests/generated/$i.ast"
+        rm "tests/generated/$i.st"
     fi
 done
 

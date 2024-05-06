@@ -56,4 +56,5 @@ void display_list(LinkedList* list) {
 
         current = current->next;
     }
+    printf("\n");
 }

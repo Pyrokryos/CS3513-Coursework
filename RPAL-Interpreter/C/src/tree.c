@@ -2,10 +2,12 @@
 
 void AST(Vertex *vertex) {
     depth_first_left_to_right_traversal(vertex, 0);
+    printf("\n");
 }
 
 void ST(Vertex *vertex) {
     depth_first_left_to_right_traversal(standardize(vertex), 0);
+    printf("\n");
 }
 
 // Function to create a new vertex.
