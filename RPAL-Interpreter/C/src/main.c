@@ -19,7 +19,7 @@
 
 #define MAX_FILE_SIZE 100000
 #define SWITCH_COUNT 3
-#define TEST_FILE "tests/2.rpal"
+#define TEST_FILE "tests/4.rpal"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -154,9 +154,12 @@ int main(int argc, char *argv[])
         ST(st);
     }
 
-    // ST(standardize(parse(stream)));
-    // init_cse_machine(standardize(parse(stream)));
-    // eval_cse_machine();
+    stream = lex(content);
+    ast = parse(stream);
+    st = standardize(ast);
+    ST(st);
+    init_cse_machine(st);
+    eval_cse_machine();
 
     // Free the allocated memory.
     free(stream);

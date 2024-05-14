@@ -15,8 +15,7 @@ HashTable *init_hash_table(size_t size)
   ht->entries = (HashTableEntry **)malloc(size * sizeof(HashTableEntry *));
   if (ht->entries == NULL)
   {
-    free(ht);
-    fprintf(stderr, "Memory allocation failed");
+    perror("Memory allocation failed");
     exit(EXIT_FAILURE);
   }
 

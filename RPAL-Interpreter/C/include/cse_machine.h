@@ -12,85 +12,26 @@
 #include "tree.h"
 
 #define add_content(ctrl_cell, content) _Generic((content), \
-  Env *: add_env_content, \
-  Lambda *: add_lambda_content, \
-  Delta *: add_delta_content, \
-  Tau *: add_tau_content, \
-  char *: add_string_content, \
-  int: add_int_content, \
-  double: add_double_content \
-)(ctrl_cell, content)
+    Env *: add_env_content,                                 \
+    Lambda *: add_lambda_content,                           \
+    Delta *: add_delta_content,                             \
+    Tau *: add_tau_content,                                 \
+    char *: add_string_content,                             \
+    int: add_int_content,                                   \
+    double: add_double_content)(ctrl_cell, content)
 
 #define calculate(a, b, op) _Generic((a), \
-    int: _Generic((b), \
-        int: calculate_int_int, \
-        double: calculate_int_double \
-    ), \
-    double: _Generic((b), \
-        int: calculate_double_int, \
-        double: calculate_double_double \
-    ) \
-)(a, b, op)
-
-typedef struct CtrlCell CtrlCell;
-
-typedef struct Env
-{
-  size_t id;
-  HashTable *rename_rules;
-  struct Env *prev;
-} Env;
-
-typedef struct Lambda
-{
-  size_t param_cnt;
-  char **params;
-  CtrlCell *body;
-} Lambda;
-
-typedef struct Delta
-{
-  CtrlCell *cell;
-} Delta;
-
-typedef struct Tau
-{
-  size_t expr_cnt;
-  CtrlCell **expressions;
-} Tau;
-
-typedef enum CellType
-{
-  ENV = 42,
-  DELTA,
-  BETA,
-  TAU,
-  LAMBDA,
-
-  DOUBLE
-} CellType;
-
-typedef struct CtrlCell
-{
-  size_t type;
-  union
-  {
-    Env *env;
-    Lambda *lambda;
-    Delta *delta;
-    Tau *tau;
-    char *s;
-    int i;
-    double d;
-  } content;
-  struct CtrlCell *prev;
-  struct CtrlCell *next;
-} CtrlCell;
+    int: _Generic((b),                    \
+    int: calculate_int_int,               \
+    double: calculate_int_double),        \
+    double: _Generic((b),                 \
+    int: calculate_double_int,            \
+    double: calculate_double_double))(a, b, op)
 
 void init_cse_machine(Vertex *vertex);
 void eval_cse_machine(void);
 
-static CtrlCell *generate_ctrl_structs(Vertex *vertex);
+static CtrlCell *generate_ctrl_structs(Vertex *vertex, bool selfish);
 
 static CtrlCell *alloc_ctrl_cell(void);
 static CtrlCell *alloc_ctrl_cell_with_type(size_t type);

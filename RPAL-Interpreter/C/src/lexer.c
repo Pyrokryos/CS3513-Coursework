@@ -315,6 +315,9 @@ static char* identify_string(char* input, TokenStream* stream) {
     } else if (match != NULL) {
         Token *token = (Token *)malloc(sizeof(Token));
 
+        match->value[match->end - match->start] = '\0';
+        match->value += 1;
+
         if (token == NULL) {
             perror("Failed to allocate memory for token");
             exit(EXIT_FAILURE);
