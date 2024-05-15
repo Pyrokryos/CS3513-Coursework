@@ -36,6 +36,12 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex, bool selfish);
 static CtrlCell *alloc_ctrl_cell(void);
 static CtrlCell *alloc_ctrl_cell_with_type(size_t type);
 
+static Lambda *dupl_lambda(Lambda *lambda);
+static CtrlCell *dupl_ctrl_structs(CtrlCell *cell);
+static CtrlCell *dupl_ctrl_cell(CtrlCell *cell, bool preserve_links);
+
+static void free_ctrl_cell(CtrlCell *cell);
+
 static void add_env_content(CtrlCell *cell, Env *env);
 static void add_lambda_content(CtrlCell *cell, Lambda *lambda);
 static void add_delta_content(CtrlCell *cell, Delta *delta);
@@ -49,4 +55,4 @@ static double calculate_int_double(int a, double b, char *op);
 static double calculate_double_int(double a, int b, char *op);
 static double calculate_double_double(double a, double b, char *op);
 
-static void free_ctrl_cell(CtrlCell *cell);
+static void Print(CtrlCell *cell);

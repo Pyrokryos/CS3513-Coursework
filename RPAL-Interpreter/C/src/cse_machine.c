@@ -33,7 +33,20 @@ void eval_cse_machine(void)
 {
 	if (current_cell->type == IDENTIFIER)
 	{
-		HashTableEntry *entry = search(current_env->content.env->rename_rules, current_cell->content.s);
+		CtrlCell *env = current_env;
+		HashTableEntry *entry = NULL;
+		while (entry == NULL && env != NULL)
+		{
+			if (env->content.env->rename_rules != NULL)
+			{
+				entry = search(env->content.env->rename_rules, current_cell->content.s);
+				env = env->content.env->prev;
+			}
+			else
+			{
+				break;
+			}
+		}
 
 		if (entry == NULL)
 		{
@@ -51,13 +64,23 @@ void eval_cse_machine(void)
 			{
 				add_content(cell, strdup(entry->val.s));
 			}
-			else if (entry->type == DOUBLE)
+			else if (
+					entry->type == R_TRUE ||
+					entry->type == R_FALSE)
 			{
-				add_content(cell, entry->val.d);
+				cell->type = entry->type;
+			}
+			else if (entry->type == TAU)
+			{
+				cell->content.tau = entry->val.tau;
 			}
 			else if (entry->type == LAMBDA)
 			{
-				cell->content.lambda = entry->val.lambda;
+				cell->content.lambda = dupl_lambda(entry->val.lambda);
+			}
+			else if (entry->type == DOUBLE)
+			{
+				add_content(cell, entry->val.d);
 			}
 
 			cell->prev = current_cell->prev;
@@ -151,7 +174,7 @@ void eval_cse_machine(void)
 			current_cell->type == B_NE)
 	{
 		double a, b;
-		
+
 		if (current_cell->next->type == INTEGER)
 		{
 			a = (double)current_cell->next->content.i;
@@ -321,44 +344,25 @@ void eval_cse_machine(void)
 
 			if (strncmp(cell->content.s, "Print", 5) == 0)
 			{
-				if (cell->next->type == TAU)
-				{
-					Tau *tau = cell->next->content.tau;
-					for (size_t i = 0; i < tau->expr_cnt; i++)
-					{
-						if (tau->expressions[i]->type == INTEGER)
-						{
-							printf("%d ", tau->expressions[i]->content.i);
-						}
-						else if (tau->expressions[i]->type == STRING)
-						{
-							printf("%s", tau->expressions[i]->content.s);
-						}
-						else if (tau->expressions[i]->type == DOUBLE)
-						{
-							printf("%lf\n", tau->expressions[i]->content.d);
-						}
-					}
-					printf("\n");
-				}
-				else if (cell->next->type == INTEGER)
-				{
-					printf("%d\n", cell->next->content.i);
-				}
-				else if (cell->next->type == STRING)
-				{
-					printf("%s\n", cell->next->content.s);
-				}
-				else if (cell->next->type == DOUBLE)
-				{
-					printf("%lf\n", cell->next->content.d);
-				}
+				Print(cell->next);
 
 				current_cell = current_cell->prev;
 
 				current_cell->next = cell->next->next;
 				cell->next->next->prev = current_cell;
 			}
+		}
+		else if (current_cell->next->type == TAU)
+		{
+			CtrlCell *cell = dupl_ctrl_cell(current_cell->next->content.tau->expressions[current_cell->next->next->content.i - 1], false);
+
+			current_cell->prev->next = cell;
+			cell->prev = current_cell->prev;
+
+			current_cell->next->next->next->prev = cell;
+			cell->next = current_cell->next->next->next;
+
+			current_cell = cell->prev;
 		}
 		else if (current_cell->next->type == LAMBDA)
 		{
@@ -387,17 +391,23 @@ void eval_cse_machine(void)
 				{
 					entry->val.i = current_cell->next->next->content.i;
 				}
-				else if (entry->type == IDENTIFIER || entry->type == STRING)
+				else if (
+						entry->type == IDENTIFIER ||
+						entry->type == STRING)
 				{
 					entry->val.s = strdup(current_cell->next->next->content.s);
 				}
-				else if (entry->type == DOUBLE)
+				else if (entry->type == TAU)
 				{
-					entry->val.d = current_cell->next->next->content.d;
+					entry->val.tau = current_cell->next->next->content.tau;
 				}
 				else if (entry->type == LAMBDA)
 				{
 					entry->val.lambda = current_cell->next->next->content.lambda;
+				}
+				else if (entry->type == DOUBLE)
+				{
+					entry->val.d = current_cell->next->next->content.d;
 				}
 
 				insert(c1->content.env->rename_rules, entry);
@@ -416,23 +426,27 @@ void eval_cse_machine(void)
 						exit(EXIT_FAILURE);
 					}
 
-					entry->key = lambda->params[0];
-					entry->type = current_cell->next->next->type;
+					entry->key = lambda->params[i];
+					entry->type = current_cell->next->next->content.tau->expressions[i]->type;
 					if (entry->type == INTEGER)
 					{
-						entry->val.i = current_cell->next->next->content.i;
+						entry->val.i = current_cell->next->next->content.tau->expressions[i]->content.i;
 					}
 					else if (entry->type == IDENTIFIER || entry->type == STRING)
 					{
-						entry->val.s = strdup(current_cell->next->next->content.s);
+						entry->val.s = strdup(current_cell->next->next->content.tau->expressions[i]->content.s);
 					}
-					else if (entry->type == DOUBLE)
+					else if (entry->type == TAU)
 					{
-						entry->val.d = current_cell->next->next->content.d;
+						entry->val.tau = current_cell->next->next->content.tau->expressions[i]->content.tau;
 					}
 					else if (entry->type == LAMBDA)
 					{
 						entry->val.lambda = current_cell->next->next->content.lambda;
+					}
+					else if (entry->type == DOUBLE)
+					{
+						entry->val.d = current_cell->next->next->content.tau->expressions[i]->content.d;
 					}
 
 					insert(c1->content.env->rename_rules, entry);
@@ -458,6 +472,12 @@ void eval_cse_machine(void)
 		}
 	}
 	else if (
+			current_cell->type == R_TRUE ||
+			current_cell->type == R_FALSE)
+	{
+		current_cell = current_cell->prev;
+	}
+	else if (
 			current_cell->type == ENV &&
 			current_cell->content.env->id != 0)
 	{
@@ -476,6 +496,11 @@ void eval_cse_machine(void)
 
 			current_cell->next->prev = current_cell->prev;
 			current_cell->prev->next = current_cell->next;
+
+			if (current_cell->next->type == LAMBDA)
+			{
+				current_env->content.env->prev->content.env->rename_rules = merge_hash_tables(current_env->content.env->prev->content.env->rename_rules, current_env->content.env->rename_rules);
+			}
 		}
 
 		current_cell = current_cell->prev;
@@ -484,7 +509,8 @@ void eval_cse_machine(void)
 	else if (current_cell->type == BETA)
 	{
 		CtrlCell *temp;
-		if (current_cell->next->type == R_TRUE) {
+		if (current_cell->next->type == R_TRUE)
+		{
 			current_cell = current_cell->prev->prev;
 
 			temp = current_cell->next;
@@ -569,7 +595,82 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex, bool selfish)
 	}
 	else
 	{
-		if (vertex->type == T_COND)
+		if (vertex->type == T_AUG)
+		{
+			CtrlCell *cell = NULL, *left_child = NULL, *right_sibling = NULL, *tmp = NULL;
+
+			left_child = generate_ctrl_structs(get_left_child(vertex), true);
+			right_sibling = generate_ctrl_structs(get_right_sibling(get_left_child(vertex)), true);
+
+			if (left_child->type == R_NIL)
+			{	
+				cell = alloc_ctrl_cell_with_type(TAU);
+
+				cell->content.tau->expr_cnt = 1;
+				cell->content.tau->expressions = (CtrlCell **)malloc(sizeof(CtrlCell *));
+				if (cell->content.tau->expressions == NULL)
+				{
+					perror("Memory allocation failed.\n");
+					exit(EXIT_FAILURE);
+				}
+
+				cell->next = right_sibling;
+				cell->prev = right_sibling->prev;
+
+				right_sibling->prev->next = cell;
+				right_sibling->prev = cell;
+			}
+			else if (left_child->type == TAU)
+			{
+				cell = left_child;
+
+				cell->content.tau->expr_cnt++;
+				cell->content.tau->expressions = (CtrlCell **)realloc(cell->content.tau->expressions, cell->content.tau->expr_cnt * sizeof(CtrlCell *));
+
+				tmp = cell->next;
+
+				cell->prev = right_sibling->prev;
+				right_sibling->prev->next = cell;
+
+				tmp->next = right_sibling;
+				right_sibling->prev = tmp;
+			}
+			else
+			{
+				cell = alloc_ctrl_cell_with_type(TAU);
+
+				cell->content.tau->expr_cnt = 2;
+				cell->content.tau->expressions = (CtrlCell **)malloc(2 * sizeof(CtrlCell *));
+				if (cell->content.tau->expressions == NULL)
+				{
+					perror("Memory allocation failed.\n");
+					exit(EXIT_FAILURE);
+				}
+
+				cell->next = left_child;
+				left_child->prev->next = right_sibling;
+				right_sibling->prev->next = cell;
+
+				cell->prev = right_sibling->prev;
+				right_sibling->prev = left_child->prev;
+				left_child->prev = cell;
+			}
+
+			if (!selfish)
+			{
+				right_sibling = generate_ctrl_structs(get_right_sibling(vertex), false);
+				if (right_sibling != NULL)
+				{
+					cell->prev = right_sibling->prev;
+					right_sibling->prev->next = cell;
+					cell->next = right_sibling;
+					right_sibling->prev = cell;
+				}
+			}
+
+			return cell;
+		}
+		else if (vertex->type == T_COND)
 		{
 			CtrlCell *_then = alloc_ctrl_cell_with_type(DELTA);
 			CtrlCell *_else = alloc_ctrl_cell_with_type(DELTA);
@@ -836,6 +937,211 @@ static CtrlCell *alloc_ctrl_cell_with_type(size_t type)
 	return cell;
 }
 
+static Lambda *dupl_lambda(Lambda *lambda)
+{
+	Lambda *new_lambda = (Lambda *)malloc(sizeof(Lambda));
+	if (new_lambda == NULL)
+	{
+		perror("Memory allocation failed.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	new_lambda->param_cnt = lambda->param_cnt;
+	new_lambda->params = (char **)malloc(lambda->param_cnt * sizeof(char *));
+	if (new_lambda->params == NULL)
+	{
+		perror("Memory allocation failed.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	for (size_t i = 0; i < lambda->param_cnt; ++i)
+	{
+		new_lambda->params[i] = strdup(lambda->params[i]);
+	}
+
+	new_lambda->body = dupl_ctrl_structs(lambda->body);
+
+	return new_lambda;
+}
+
+static CtrlCell *dupl_ctrl_structs(CtrlCell *cell)
+{
+	if (cell == NULL)
+	{
+		return NULL;
+	}
+	else
+	{
+		CtrlCell *c1 = cell, *c2 = cell, *c3 = NULL, *c4 = NULL, *c5 = NULL;
+
+		do
+		{
+			if (c3 == NULL)
+			{
+				c3 = dupl_ctrl_cell(c1, false);
+
+				c4 = c3;
+				c5 = c3;
+			}
+			else
+			{
+				c5 = dupl_ctrl_cell(c2, false);
+
+				c4->next = c5;
+				c5->prev = c4;
+
+				c4 = c5;
+			}
+
+			c2 = c2->next;
+		} while (c1 != c2);
+
+		if (c3 == c4)
+		{
+			c3->prev = c3;
+			c3->next = c3;
+		}
+		else
+		{
+			c3->prev = c4;
+			c4->next = c3;
+		}
+
+		return c3;
+	}
+}
+
+static CtrlCell *dupl_ctrl_cell(CtrlCell *cell, bool preserve_links)
+{
+	CtrlCell *new_cell = alloc_ctrl_cell_with_type(cell->type);
+
+	if (cell->type == ENV)
+	{
+		new_cell->content.env = (Env *)malloc(sizeof(Env));
+		if (new_cell->content.env == NULL)
+		{
+			perror("Memory allocation failed.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		new_cell->content.env->id = cell->content.env->id;
+		new_cell->content.env->rename_rules = cell->content.env->rename_rules;
+		new_cell->content.env->prev = cell->content.env->prev;
+	}
+	else if (cell->type == DELTA)
+	{
+		new_cell->content.delta = (Delta *)malloc(sizeof(Delta));
+		if (new_cell->content.delta == NULL)
+		{
+			perror("Memory allocation failed.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		new_cell->content.delta->cell = dupl_ctrl_structs(cell->content.delta->cell);
+	}
+	else if (cell->type == TAU)
+	{
+		new_cell->content.tau = (Tau *)malloc(sizeof(Tau));
+		if (new_cell->content.tau == NULL)
+		{
+			perror("Memory allocation failed.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		new_cell->content.tau->expr_cnt = cell->content.tau->expr_cnt;
+		new_cell->content.tau->expressions = (CtrlCell **)malloc(cell->content.tau->expr_cnt * sizeof(CtrlCell *));
+		if (new_cell->content.tau->expressions == NULL)
+		{
+			perror("Memory allocation failed.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		for (size_t i = 0; i < cell->content.tau->expr_cnt; ++i)
+		{
+			new_cell->content.tau->expressions[i] = dupl_ctrl_structs(cell->content.tau->expressions[i]);
+		}
+	}
+	else if (cell->type == LAMBDA)
+	{
+		new_cell->content.lambda = dupl_lambda(cell->content.lambda);
+	}
+	else if (cell->type == INTEGER)
+	{
+		new_cell->content.i = cell->content.i;
+	}
+	else if (
+			cell->type == IDENTIFIER ||
+			cell->type == STRING)
+	{
+		new_cell->content.s = strdup(cell->content.s);
+	}
+	else if (cell->type == DOUBLE)
+	{
+		new_cell->content.d = cell->content.d;
+	}
+
+	if (preserve_links)
+	{
+		new_cell->prev = cell->prev;
+		new_cell->next = cell->next;
+	}
+	else
+	{
+		new_cell->prev = new_cell;
+		new_cell->next = new_cell;
+	}
+
+	return new_cell;
+}
+
+static void free_ctrl_cell(CtrlCell *cell)
+{
+	if (cell->type == ENV)
+	{
+		free_hash_table(cell->content.env->rename_rules);
+		cell->content.env->rename_rules = NULL;
+
+		free(cell->content.env);
+		cell->content.env = NULL;
+	}
+	else if (cell->type == LAMBDA)
+	{
+		for (size_t i = 0; i < cell->content.lambda->param_cnt; ++i)
+		{
+			free(cell->content.lambda->params[i]);
+		}
+
+		free(cell->content.lambda);
+		cell->content.lambda = NULL;
+	}
+	else if (cell->type == DELTA)
+	{
+		CtrlCell *t1 = cell->content.delta->cell, *t2;
+		if (t1 != NULL)
+		{
+			t1->prev->next = NULL;
+			t1->prev = NULL;
+		}
+
+		while (t1 != NULL)
+		{
+			t2 = t1;
+			t1 = t1->next;
+			free_ctrl_cell(t2);
+		}
+
+		cell->content.delta = NULL;
+	}
+	else if (cell->type == TAU)
+	{
+		free(cell->content.tau);
+		cell->content.tau = NULL;
+	}
+
+	free(cell);
+	cell = NULL;
+}
+
 static void add_env_content(CtrlCell *cell, Env *env)
 {
 	cell->content.env = env;
@@ -955,49 +1261,38 @@ double calculate_double_double(double a, double b, char *op)
 	}
 }
 
-static void free_ctrl_cell(CtrlCell *cell)
+static void Print(CtrlCell *cell)
 {
-	if (cell->type == ENV)
+	if (cell->type == TAU)
 	{
-		free_hash_table(cell->content.env->rename_rules);
-		cell->content.env->rename_rules = NULL;
-
-		free(cell->content.env);
-		cell->content.env = NULL;
-	}
-	else if (cell->type == LAMBDA)
-	{
-		for (size_t i = 0; i < cell->content.lambda->param_cnt; ++i)
+		Tau *tau = cell->content.tau;
+		for (size_t i = 0; i < tau->expr_cnt; i++)
 		{
-			free(cell->content.lambda->params[i]);
+			Print(tau->expressions[i]);
+			if (tau->expressions[i]->type != TAU)
+			{
+				printf(" ");
+			}
 		}
-
-		free(cell->content.lambda);
-		cell->content.lambda = NULL;
 	}
-	else if (cell->type == DELTA)
+	else if (cell->type == INTEGER)
 	{
-		CtrlCell *t1 = cell->content.delta->cell, *t2;
-		if (t1 != NULL) {
-			t1->prev->next = NULL;
-			t1->prev = NULL;
-		}
-		
-		while (t1 != NULL)
-		{
-			t2 = t1;
-			t1 = t1->next;
-			free_ctrl_cell(t2);
-		}
-
-		cell->content.delta = NULL;
+		printf("%d", cell->content.i);
 	}
-	else if (cell->type == TAU)
+	else if (cell->type == STRING)
 	{
-		free(cell->content.tau);
-		cell->content.tau = NULL;
+		printf("%s", cell->content.s);
 	}
-
-	free(cell);
-	cell = NULL;
+	else if (cell->type == DOUBLE)
+	{
+		printf("%lf", cell->content.d);
+	}
+	else if (cell->type == R_TRUE)
+	{
+		printf("true");
+	}
+	else if (cell->type == R_FALSE)
+	{
+		printf("false");
+	}
 }

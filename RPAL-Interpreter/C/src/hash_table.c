@@ -58,13 +58,13 @@ size_t insert(HashTable *ht, HashTableEntry *entry)
       return EXIT_SUCCESS;
     }
 
+    index = (index + 1) % ht->size;
+  
     if (index == original_index)
     {
       perror("Hash table is full");
       exit(EXIT_FAILURE);
     }
-
-    index = (index + 1) % ht->size;
   }
 
   ht->entries[index] = entry;
@@ -107,15 +107,49 @@ HashTableEntry *search(HashTable *ht, char *key)
       return ht->entries[index];
     }
 
+    index = (index + 1) % ht->size;
+  
     if (index == original_index)
     {
       return NULL;
     }
-
-    index = (index + 1) % ht->size;
   }
 
   return NULL;
+}
+
+HashTable *merge_hash_tables(HashTable *ht1, HashTable *ht2)
+{
+  if (ht1 == NULL)
+  {
+    return ht2;
+  }
+  else if (ht2 == NULL)
+  {
+    return ht1;
+  }
+  else
+  {
+    HashTable *merged = init_hash_table(ht1->size + ht2->size);
+
+    for (size_t i = 0; i < ht1->size; ++i)
+    {
+      if (ht1->entries[i] != NULL)
+      {
+        insert(merged, ht1->entries[i]);
+      }
+    }
+
+    for (size_t i = 0; i < ht2->size; ++i)
+    {
+      if (ht2->entries[i] != NULL)
+      {
+        insert(merged, ht2->entries[i]);
+      }
+    }
+
+    return merged;
+  }
 }
 
 void free_hash_table_entry(HashTableEntry *entry)
