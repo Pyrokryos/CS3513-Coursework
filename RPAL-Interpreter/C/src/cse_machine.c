@@ -477,6 +477,18 @@ void eval_cse_machine(void)
 	{
 		current_cell = current_cell->prev;
 	}
+	else if (current_cell->type == YSTAR)
+	{
+		CtrlCell *cell = current_cell->next->content.lambda->body;
+
+		current_cell->prev->prev->next = cell;
+		cell->prev = current_cell->prev->prev;
+
+		current_cell->next->next->prev = cell;
+		cell->next = current_cell->next->next;
+
+		current_cell = cell->prev;
+	}
 	else if (
 			current_cell->type == ENV &&
 			current_cell->content.env->id != 0)
@@ -487,7 +499,7 @@ void eval_cse_machine(void)
 			current_cell->next->next->prev = current_cell->prev;
 			current_cell->prev->next = current_cell->next->next;
 		}
-		else
+		else if (current_cell->next->next->type == ENV)
 		{
 			temp = current_cell->next->next;
 
