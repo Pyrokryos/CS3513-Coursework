@@ -1,150 +1,369 @@
-#include <stdio.h>
-
 #include "../include/hash_table.h"
 
-HashTable *init_hash_table(size_t size)
+Dict *init_dictionary(size_t size)
 {
-  HashTable *ht = (HashTable *)malloc(sizeof(HashTable));
-  if (ht == NULL)
+  Dict *dict = (Dict *)malloc(sizeof(Dict));
+  if (dict == NULL)
   {
-    perror("Memory allocation failed");
+    fprintf(stderr, "%s.\n", strerror(ENOMEM));
     exit(EXIT_FAILURE);
   }
 
-  ht->size = size;
-  ht->entries = (HashTableEntry **)malloc(size * sizeof(HashTableEntry *));
-  if (ht->entries == NULL)
+  *(size_t *)&dict->size = size;
+  dict->bindings = (Binding **)calloc(dict->size, sizeof(Binding *));
+  if (dict->bindings == NULL)
   {
-    perror("Memory allocation failed");
+    fprintf(stderr, "%s.\n", strerror(ENOMEM));
     exit(EXIT_FAILURE);
   }
 
-  for (size_t i = 0; i < size; ++i)
-  {
-    ht->entries[i] = NULL;
-    ht->entries[i] = NULL;
-  }
-
-  return ht;
+  return dict;
 }
 
-static size_t hash(char *str, size_t tbl_size)
+static size_t hash_by_div(const char *const key, const size_t dict_size)
 {
-  if (str == NULL)
+  if (key == NULL)
   {
-    perror("Cannot hash a null string");
+    fprintf(stderr, "%s. : Cannot hash a null string.\n", strerror(ENOTSUP));
     exit(EXIT_FAILURE);
   }
 
   size_t sum = 0;
-  for (size_t i = 0; str[i] != '\0'; ++i)
+  for (size_t i = 0; key[i] != '\0'; ++i)
   {
-    sum += (size_t)str[i];
+
+    sum += (size_t)key[i] * (size_t)pow(HASH_BASE, i);
   }
-  return sum % tbl_size;
+
+  return sum % dict_size;
 }
 
-size_t insert(HashTable *ht, HashTableEntry *entry)
+static size_t insert_str(const Dict *const dict, const char *const key, const char *const val)
 {
-  size_t index = hash(entry->key, ht->size);
-  size_t original_index = index;
+  assert(dict != NULL && key != NULL && val != NULL);
 
-  while (ht->entries[index] != NULL)
+  size_t idx = hash_by_div(key, dict->size);
+  const size_t orig_idx = idx;
+  while (dict->bindings[idx] != NULL)
   {
-    if (strcmp(ht->entries[index]->key, entry->key) == 0)
+    if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      free_hash_table_entry(ht->entries[index]);
-      ht->entries[index] = entry;
+      assert(dict->bindings[idx]->type != NULL);
+
+      if (dict->bindings[idx]->type == STRING)
+      {
+        free_val(dict->bindings[idx]->val.s);
+      }
+      else if (dict->bindings[idx]->type == TAU)
+      {
+        free_val(dict->bindings[idx]->val.tau);
+      }
+      else if (dict->bindings[idx]->type == LAMBDA)
+      {
+        free_val(dict->bindings[idx]->val.lambda);
+      }
+      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+
+      dict->bindings[idx]->type = STRING;
+      dict->bindings[idx]->val.s = dupl_val(val);
       return EXIT_SUCCESS;
     }
 
-    index = (index + 1) % ht->size;
-  
-    if (index == original_index)
+    idx = (idx + 1) % dict->size;
+
+    if (idx == orig_idx)
     {
-      perror("Hash table is full");
+      fprintf(stderr, "%s. : Cannot insert to an already full dictionary.\n", strerror(ECANCELED));
       exit(EXIT_FAILURE);
     }
   }
 
-  ht->entries[index] = entry;
+  Binding *binding = (Binding *)malloc(sizeof(Binding));
+  if (binding == NULL)
+  {
+    fprintf(stderr, "%s.\n", strerror(ENOMEM));
+    exit(EXIT_FAILURE);
+  }
+  *(char **)&binding->key = strdup(key);
+  binding->type = STRING;
+  binding->val.s = dupl_val(val);
+
+  *(Binding **)&dict->bindings[idx] = binding;
+
   return EXIT_SUCCESS;
 }
-
-size_t delete(HashTable *ht, char *key)
+static size_t insert_int(const Dict *const dict, const char *const key, const int val)
 {
-  size_t index = hash(key, ht->size);
-  size_t original_index = index;
+  assert(dict != NULL && key != NULL && val != NULL);
 
-  while (ht->entries[index] != NULL)
+  size_t idx = hash_by_div(key, dict->size);
+  const size_t orig_idx = idx;
+  while (dict->bindings[idx] != NULL)
   {
-    if (strcmp(ht->entries[index]->key, key) == 0)
+    if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      free_hash_table_entry(ht->entries[index]);
+      assert(dict->bindings[idx]->type != NULL);
+
+      if (dict->bindings[idx]->type == STRING)
+      {
+        free_val(dict->bindings[idx]->val.s);
+      }
+      else if (dict->bindings[idx]->type == TAU)
+      {
+        free_val(dict->bindings[idx]->val.tau);
+      }
+      else if (dict->bindings[idx]->type == LAMBDA)
+      {
+        free_val(dict->bindings[idx]->val.lambda);
+      }
+      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+
+      dict->bindings[idx]->type = INTEGER;
+      dict->bindings[idx]->val.i = val;
       return EXIT_SUCCESS;
     }
 
-    if (index == original_index)
-    {
-      return EXIT_FAILURE;
-    }
+    idx = (idx + 1) % dict->size;
 
-    index = (index + 1) % ht->size;
+    if (idx == orig_idx)
+    {
+      fprintf(stderr, "%s. : Cannot insert to an already full dictionary.\n", strerror(ECANCELED));
+      exit(EXIT_FAILURE);
+    }
   }
 
-  return EXIT_FAILURE;
-}
-
-HashTableEntry *search(HashTable *ht, char *key)
-{
-  size_t index = hash(key, ht->size);
-  size_t original_index = index;
-
-  while (ht->entries[index] != NULL)
+  Binding *binding = (Binding *)malloc(sizeof(Binding));
+  if (binding == NULL)
   {
-    if (strcmp(ht->entries[index]->key, key) == 0)
+    fprintf(stderr, "%s.\n", strerror(ENOMEM));
+    exit(EXIT_FAILURE);
+  }
+  *(char **)&binding->key = strdup(key);
+  binding->type = INTEGER;
+  binding->val.i = val;
+
+  *(Binding **)&dict->bindings[idx] = binding;
+
+  return EXIT_SUCCESS;
+}
+static size_t insert_tau(const Dict *const dict, const char *const key, const Tau *const val)
+{
+  assert(dict != NULL && key != NULL && val != NULL);
+
+  size_t idx = hash_by_div(key, dict->size);
+  const size_t orig_idx = idx;
+  while (dict->bindings[idx] != NULL)
+  {
+    if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      return ht->entries[index];
+      assert(dict->bindings[idx]->type != NULL);
+
+      if (dict->bindings[idx]->type == STRING)
+      {
+        free_val(dict->bindings[idx]->val.s);
+      }
+      else if (dict->bindings[idx]->type == TAU)
+      {
+        free_val(dict->bindings[idx]->val.tau);
+      }
+      else if (dict->bindings[idx]->type == LAMBDA)
+      {
+        free_val(dict->bindings[idx]->val.lambda);
+      }
+      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+
+      dict->bindings[idx]->type = TAU;
+      dict->bindings[idx]->val.tau = dupl_val(val);
+      return EXIT_SUCCESS;
     }
 
-    index = (index + 1) % ht->size;
-  
-    if (index == original_index)
+    idx = (idx + 1) % dict->size;
+
+    if (idx == orig_idx)
     {
-      return NULL;
+      fprintf(stderr, "%s. : Cannot insert to an already full dictionary.\n", strerror(ECANCELED));
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  Binding *binding = (Binding *)malloc(sizeof(Binding));
+  if (binding == NULL)
+  {
+    fprintf(stderr, "%s.\n", strerror(ENOMEM));
+    exit(EXIT_FAILURE);
+  }
+  *(char **)&binding->key = strdup(key);
+  binding->type = TAU;
+  binding->val.tau = dupl_val(val);
+
+  *(Binding **)&dict->bindings[idx] = binding;
+
+  return EXIT_SUCCESS;
+}
+static size_t insert_lambda(const Dict *const dict, const char *const key, const Lambda *const val)
+{
+  assert(dict != NULL && key != NULL && val != NULL);
+
+  size_t idx = hash_by_div(key, dict->size);
+  const size_t orig_idx = idx;
+  while (dict->bindings[idx] != NULL)
+  {
+    if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
+    {
+      assert(dict->bindings[idx]->type != NULL);
+
+      if (dict->bindings[idx]->type == STRING)
+      {
+        free_val(dict->bindings[idx]->val.s);
+      }
+      else if (dict->bindings[idx]->type == TAU)
+      {
+        free_val(dict->bindings[idx]->val.tau);
+      }
+      else if (dict->bindings[idx]->type == LAMBDA)
+      {
+        free_val(dict->bindings[idx]->val.lambda);
+      }
+      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+
+      dict->bindings[idx]->type = LAMBDA;
+      dict->bindings[idx]->val.lambda = dupl_val(val);
+      return EXIT_SUCCESS;
+    }
+
+    idx = (idx + 1) % dict->size;
+
+    if (idx == orig_idx)
+    {
+      fprintf(stderr, "%s. : Cannot insert to an already full dictionary.\n", strerror(ECANCELED));
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  Binding *binding = (Binding *)malloc(sizeof(Binding));
+  if (binding == NULL)
+  {
+    fprintf(stderr, "%s.\n", strerror(ENOMEM));
+    exit(EXIT_FAILURE);
+  }
+  *(char **)&binding->key = strdup(key);
+  binding->type = LAMBDA;
+  binding->val.lambda = dupl_val(val);
+
+  *(Binding **)&dict->bindings[idx] = binding;
+
+  return EXIT_SUCCESS;
+}
+static size_t insert_dbl(const Dict *const dict, const char *const key, const double val)
+{
+  assert(dict != NULL && key != NULL && val != NULL);
+
+  size_t idx = hash_by_div(key, dict->size);
+  const size_t orig_idx = idx;
+  while (dict->bindings[idx] != NULL)
+  {
+    if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
+    {
+      assert(dict->bindings[idx]->type != NULL);
+
+      if (dict->bindings[idx]->type == STRING)
+      {
+        free_val(dict->bindings[idx]->val.s);
+      }
+      else if (dict->bindings[idx]->type == TAU)
+      {
+        free_val(dict->bindings[idx]->val.tau);
+      }
+      else if (dict->bindings[idx]->type == LAMBDA)
+      {
+        free_val(dict->bindings[idx]->val.lambda);
+      }
+      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+
+      dict->bindings[idx]->type = DOUBLE;
+      dict->bindings[idx]->val.d = val;
+      return EXIT_SUCCESS;
+    }
+
+    idx = (idx + 1) % dict->size;
+
+    if (idx == orig_idx)
+    {
+      fprintf(stderr, "%s. : Cannot insert to an already full dictionary.\n", strerror(ECANCELED));
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  Binding *binding = (Binding *)malloc(sizeof(Binding));
+  if (binding == NULL)
+  {
+    fprintf(stderr, "%s.\n", strerror(ENOMEM));
+    exit(EXIT_FAILURE);
+  }
+  *(char **)&binding->key = strdup(key);
+  binding->type = DOUBLE;
+  binding->val.d = val;
+
+  *(Binding **)&dict->bindings[idx] = binding;
+
+  return EXIT_SUCCESS;
+}
+
+Binding *search(const Dict *const dict, const char *const key)
+{
+  assert(dict != NULL && key != NULL);
+
+  size_t idx = hash_by_div(key, dict->size);
+  const size_t orig_idx = idx;
+  while (dict->bindings[idx] != NULL)
+  {
+    if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
+    {
+      return dupl_binding(dict->bindings[idx]);
+    }
+
+    idx = (idx + 1) % dict->size;
+
+    if (idx == orig_idx)
+    {
+      break;
     }
   }
 
   return NULL;
 }
 
-HashTable *merge_hash_tables(HashTable *ht1, HashTable *ht2)
+Dict *merge_dicts(const Dict *const dict1, const Dict *const dict2)
 {
-  if (ht1 == NULL)
+  if (dict1 == NULL && dict2 == NULL)
   {
-    return ht2;
+    return NULL;
   }
-  else if (ht2 == NULL)
+  else if (dict1 == NULL)
   {
-    return ht1;
+    return dupl_dict(dict2);
+  }
+  else if (dict2 == NULL)
+  {
+    return dupl_dict(dict1);
   }
   else
   {
-    HashTable *merged = init_hash_table(ht1->size + ht2->size);
+    Dict *merged = init_dictionary(dict1->size + dict2->size);
 
-    for (size_t i = 0; i < ht1->size; ++i)
+    for (size_t i = 0; i < dict1->size; ++i)
     {
-      if (ht1->entries[i] != NULL)
+      if (dict1->bindings[i] != NULL)
       {
-        insert(merged, ht1->entries[i]);
+        insert(merged, dict1->bindings[i]->key, dict1->bindings[i]->val);
       }
     }
 
-    for (size_t i = 0; i < ht2->size; ++i)
+    for (size_t i = 0; i < dict2->size; ++i)
     {
-      if (ht2->entries[i] != NULL)
+      if (dict2->bindings[i] != NULL)
       {
-        insert(merged, ht2->entries[i]);
+        insert(merged, dict2->bindings[i]->key, dict2->bindings[i]->val);
       }
     }
 
@@ -152,41 +371,129 @@ HashTable *merge_hash_tables(HashTable *ht1, HashTable *ht2)
   }
 }
 
-void free_hash_table_entry(HashTableEntry *entry)
+Binding *dupl_binding(const Binding *const binding)
 {
-  if (entry == NULL)
+  if (binding == NULL)
   {
-    return;
+    return NULL;
   }
-
-  free(entry->key);
-  entry->key = NULL;
-
-  if (entry->type == STRING)
+  else
   {
-    free(entry->val.s);
-    entry->val.s = NULL;
-  }
+    assert(binding->key != NULL && binding->val != NULL);
 
-  free(entry);
-  entry = NULL;
+    Binding *dupl = (Binding *)malloc(sizeof(Binding));
+    if (dupl == NULL)
+    {
+      fprintf(stderr, "%s.\n", strerror(ENOMEM));
+      exit(EXIT_FAILURE);
+    }
+
+    *(char **)&dupl->key = strdup(binding->key);
+    dupl->type = binding->type;
+
+    if (binding->type == STRING)
+    {
+      dupl->val.s = dupl_val(binding->val.s);
+    }
+    else if (binding->type == INTEGER)
+    {
+      dupl->val.i = binding->val.i;
+    }
+    else if (binding->type == TAU)
+    {
+      dupl->val.tau = dupl_val(binding->val.tau);
+    }
+    else if (binding->type == LAMBDA)
+    {
+      dupl->val.lambda = dupl_val(binding->val.lambda);
+    }
+    else if (binding->type == DOUBLE)
+    {
+      dupl->val.d = binding->val.d;
+    }
+
+    return dupl;
+  }
+}
+Dict *dupl_dict(const Dict *const dict)
+{
+  if (dict == NULL)
+  {
+    return NULL;
+  }
+  else
+  {
+    assert(dict->bindings != NULL);
+    
+    Dict *dupl = init_dictionary(dict->size);
+
+    for (size_t i = 0; i < dict->size; ++i)
+    {
+      if (dict->bindings[i] != NULL)
+      {
+        insert(dupl, dict->bindings[i]->key, dict->bindings[i]->val);
+      }
+    }
+
+    return dupl;
+  }
 }
 
-void free_hash_table(HashTable *ht)
+static void free_str(char *const s)
 {
-  if (ht == NULL)
+  free((void *)s);
+}
+static void free_binding(Binding *const binding)
+{
+  if (binding == NULL)
   {
     return;
   }
-
-  for (size_t i = 0; i < ht->size; ++i)
+  else
   {
-    free_hash_table_entry(ht->entries[i]);
+    assert(binding->key != NULL && binding->val != NULL);
+
+    free((void *)binding->key);
+    memset(&binding->key, 0, sizeof(binding->key));
+
+    if (binding->type == STRING)
+    {
+      free_val(binding->val.s);
+    }
+    else if (binding->type == TAU)
+    {
+      free_val(binding->val.tau);
+    }
+    else if (binding->type == LAMBDA)
+    {
+      free_val(binding->val.lambda);
+    }
+    memset(&binding->val, 0, sizeof(binding->val));
+
+    binding->type = 0;
+
+    free((void *)binding);
   }
+}
+void free_dict(Dict *const dict)
+{
+  if (dict == NULL)
+  {
+    return;
+  }
+  else
+  {
+    assert(dict->bindings != NULL);
 
-  free(ht->entries);
-  ht->entries = NULL;
+    for (size_t i = 0; i < dict->size; ++i)
+    {
+      free_binding((void *)dict->bindings[i]);
+      memset(&dict->bindings[i], 0, sizeof(dict->bindings[i]));
+    }
 
-  free(ht);
-  ht = NULL;
+    free((void *)dict->bindings);
+    memset(&dict->bindings, 0, sizeof(dict->bindings));
+
+    free(dict);
+  }
 }

@@ -106,36 +106,12 @@ typedef struct Vertex
 const char *token_type_to_string(size_t type);
 const char *phrase_type_to_string(size_t type);
 
-typedef struct Tau Tau;
-typedef struct Lambda Lambda;
-
-typedef struct HashTableEntry
-{
-  char *key;
-  size_t type;
-  union
-  {
-    char *s;
-    int i;
-    double d;
-    Tau *tau;
-    Lambda *lambda;
-  } val;
-
-} HashTableEntry;
-
-typedef struct HashTable
-{
-  size_t size;
-  HashTableEntry **entries;
-} HashTable;
-
 typedef struct CtrlCell CtrlCell;
 
 typedef struct Env
 {
   size_t id;
-  HashTable *rename_rules;
+  Dict *rename_rules;
   CtrlCell *prev;
 } Env;
 

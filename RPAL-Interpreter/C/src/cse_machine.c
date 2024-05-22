@@ -237,7 +237,7 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex, bool selfish)
         temp = get_left_child(get_left_child(vertex));
         for (int i = 0; i < param_cnt; ++i)
         {
-          params[i] = strdup(temp->token->value.s);
+          params[i] = strdup(temp->token->val.s);
           temp = get_right_sibling(temp);
         }
       }
@@ -250,7 +250,7 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex, bool selfish)
           exit(EXIT_FAILURE);
         }
 
-        params[0] = strdup(get_left_child(vertex)->token->value.s);
+        params[0] = strdup(get_left_child(vertex)->token->val.s);
       }
 
       cell->content.lambda->param_cnt = param_cnt;
@@ -282,11 +282,11 @@ static CtrlCell *generate_ctrl_structs(Vertex *vertex, bool selfish)
       {
         if (vertex->token->type == INTEGER)
         {
-          cell->content.i = vertex->token->value.i;
+          cell->content.i = vertex->token->val.i;
         }
         else if (vertex->token->type == IDENTIFIER || vertex->token->type == STRING)
         {
-          cell->content.s = strdup(vertex->token->value.s);
+          cell->content.s = strdup(vertex->token->val.s);
         }
         cell->type = vertex->token->type;
       }
@@ -332,7 +332,7 @@ void eval_cse_machine(void)
   {
     // Search for the identifier in the path of environments from the current environment to the global environment.
     CtrlCell *env = current_env;
-    HashTableEntry *entry = NULL;
+    Binding *entry = NULL;
 
     while (entry == NULL && env != NULL)
     {
@@ -348,7 +348,7 @@ void eval_cse_machine(void)
     }
 
     /**
-     * If the identifier is found, it is replaced with the value it is bound to.
+     * If the identifier is found, it is replaced with the val it is bound to.
      * Otherwise, proceed to the next cell.
      */
     if (entry == NULL)
@@ -678,9 +678,9 @@ void eval_cse_machine(void)
 
       if (lambda->param_cnt == 1)
       {
-        c1->content.env->rename_rules = init_hash_table(1);
+        c1->content.env->rename_rules = init_dictionary(1);
 
-        HashTableEntry *entry = (HashTableEntry *)malloc(sizeof(HashTableEntry));
+        Binding *entry = (Binding *)malloc(sizeof(Binding));
         if (entry == NULL)
         {
           perror("Memory allocation failed.\n");
@@ -716,12 +716,12 @@ void eval_cse_machine(void)
       }
       else
       {
-        c1->content.env->rename_rules = init_hash_table(2 * lambda->param_cnt);
+        c1->content.env->rename_rules = init_dictionary(2 * lambda->param_cnt);
 
-        HashTableEntry *entry;
+        Binding *entry;
         for (int i = 0; i < lambda->param_cnt; ++i)
         {
-          entry = (HashTableEntry *)malloc(sizeof(HashTableEntry));
+          entry = (Binding *)malloc(sizeof(Binding));
           if (entry == NULL)
           {
             perror("Memory allocation failed.\n");
@@ -813,7 +813,7 @@ void eval_cse_machine(void)
 
       if (current_cell->next->type == LAMBDA)
       {
-        current_env->content.env->prev->content.env->rename_rules = merge_hash_tables(current_env->content.env->prev->content.env->rename_rules, current_env->content.env->rename_rules);
+        current_env->content.env->prev->content.env->rename_rules = merge_dicts(current_env->content.env->prev->content.env->rename_rules, current_env->content.env->rename_rules);
       }
     }
 
@@ -1135,7 +1135,7 @@ static void free_ctrl_cell(CtrlCell *cell)
 {
   if (cell->type == ENV)
   {
-    free_hash_table(cell->content.env->rename_rules);
+    free_dict(cell->content.env->rename_rules);
     cell->content.env->rename_rules = NULL;
 
     free(cell->content.env);
