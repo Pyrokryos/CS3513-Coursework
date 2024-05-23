@@ -19,7 +19,7 @@
 
 #define MAX_FILE_SIZE 100000
 #define SWITCH_COUNT 3
-#define TEST_FILE "tests/7.rpal"
+#define TEST_FILE "tests/1.rpal"
 
 #include <stdio.h>
 #include <stdlib.h>

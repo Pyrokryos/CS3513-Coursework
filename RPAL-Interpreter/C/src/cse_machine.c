@@ -533,16 +533,23 @@ static void Rule_VI(void)
 
   if (current_cell->type == T_AUG)
   {
-    assert((current_cell->next->type == R_NIL || current_cell->next->type == TAU) && (current_cell->next->next->type == R_NIL || current_cell->next->next->type == TAU));
-
     size_t expr_cnt = 0;
     if (current_cell->next->type == TAU)
     {
       expr_cnt += current_cell->next->content.tau->expr_cnt;
     }
+    else if (current_cell->next->type == INTEGER || current_cell->next->type == STRING || current_cell->next->type == DOUBLE)
+    {
+      expr_cnt++;
+    }
+
     if (current_cell->next->next->type == TAU)
     {
       expr_cnt += current_cell->next->next->content.tau->expr_cnt;
+    }
+    else if (current_cell->next->next->type == INTEGER || current_cell->next->next->type == STRING || current_cell->next->next->type == DOUBLE)
+    {
+      expr_cnt++;
     }
 
     Tau *tau = (Tau *)malloc(sizeof(Tau));
@@ -562,12 +569,21 @@ static void Rule_VI(void)
         *(CtrlCell **)&tau->expressions[idx++] = dupl_ctrl_cell(current_cell->next->content.tau->expressions[i], false);
       }
     }
+    else if (current_cell->next->type == INTEGER || current_cell->next->type == STRING || current_cell->next->type == DOUBLE)
+    {
+      *(CtrlCell **)&tau->expressions[idx++] = dupl_ctrl_cell(current_cell->next, false);
+    }
+
     if (current_cell->next->next->type == TAU)
     {
       for (size_t i = 0; i < current_cell->next->next->content.tau->expr_cnt; ++i)
       {
         *(CtrlCell **)&tau->expressions[idx++] = dupl_ctrl_cell(current_cell->next->next->content.tau->expressions[i], false);
       }
+    }
+    else if (current_cell->next->next->type == INTEGER || current_cell->next->next->type == STRING || current_cell->next->next->type == DOUBLE)
+    {
+      *(CtrlCell **)&tau->expressions[idx++] = dupl_ctrl_cell(current_cell->next->next, false);
     }
 
     *(size_t *)&cell->type = TAU;
@@ -935,9 +951,8 @@ static void Rule_XI(void)
 {
   assert(
       (current_cell != NULL && current_cell->next != NULL && current_cell->next->next != NULL) &&
-      (current_cell->type == R_GAMMA && current_cell->next->type == LAMBDA && current_cell->next->next->type == TAU) &&
-      (current_cell->next->content.lambda != NULL && current_cell->next->content.lambda->param_cnt > 1 && current_cell->next->content.lambda->body != NULL) &&
-      (current_cell->next->next->content.tau != NULL && current_cell->next->next->content.tau->expr_cnt == current_cell->next->content.lambda->param_cnt));
+      (current_cell->type == R_GAMMA && current_cell->next->type == LAMBDA) &&
+      (current_cell->next->content.lambda != NULL && current_cell->next->content.lambda->param_cnt > 1 && current_cell->next->content.lambda->body != NULL));
 
   Lambda *lambda = current_cell->next->content.lambda;
   CtrlCell *c1 = alloc_ctrl_cell(ENV), *c2 = alloc_ctrl_cell(ENV), *c3;
@@ -945,53 +960,143 @@ static void Rule_XI(void)
   *(size_t *)&c1->content.env->id = env_cnt++;
   *(size_t *)&c2->content.env->id = c1->content.env->id;
 
-  *(Dict **)&c1->content.env->bindings = init_dict(2 * lambda->param_cnt);
-  for (int i = 0; i < lambda->param_cnt; ++i)
+  size_t provided_param_cnt = 0;
+  if (current_cell->next->next->type == TAU)
   {
-    if (current_cell->next->next->content.tau->expressions[i]->type == INTEGER)
+    provided_param_cnt += current_cell->next->next->content.tau->expr_cnt;
+  }
+  else if (current_cell->next->next->type == INTEGER || current_cell->next->next->type == STRING || current_cell->next->next->type == DOUBLE)
+  {
+    provided_param_cnt++;
+  }
+
+  if (provided_param_cnt == 1)
+  {
+    *(Dict **)&c1->content.env->bindings = init_dict(1);
+    if (current_cell->next->next->type == INTEGER)
     {
-      insert(c1->content.env->bindings, lambda->params[i], current_cell->next->next->content.tau->expressions[i]->content.i);
+      insert(c1->content.env->bindings, lambda->params[0], current_cell->next->next->content.i);
     }
-    else if (current_cell->next->next->content.tau->expressions[i]->type == IDENTIFIER || current_cell->next->next->content.tau->expressions[i]->type == STRING)
+    else if (
+        current_cell->next->next->type == IDENTIFIER ||
+        current_cell->next->next->type == STRING)
     {
-      insert(c1->content.env->bindings, lambda->params[i], (char *)current_cell->next->next->content.tau->expressions[i]->content.s);
+      insert(c1->content.env->bindings, lambda->params[0], (char *)current_cell->next->next->content.s);
     }
-    else if (current_cell->next->next->content.tau->expressions[i]->type == TAU)
+    else if (current_cell->next->next->type == TAU)
     {
-      insert(c1->content.env->bindings, lambda->params[i], (Tau *)current_cell->next->next->content.tau->expressions[i]->content.tau);
+      insert(c1->content.env->bindings, lambda->params[0], (Tau *)current_cell->next->next->content.tau);
     }
-    else if (current_cell->next->next->content.tau->expressions[i]->type == LAMBDA)
+    else if (current_cell->next->next->type == LAMBDA)
     {
-      insert(c1->content.env->bindings, lambda->params[i], (Lambda *)current_cell->next->next->content.tau->expressions[i]->content.lambda);
+      insert(c1->content.env->bindings, lambda->params[0], (Lambda *)current_cell->next->next->content.lambda);
     }
-    else if (current_cell->next->next->content.tau->expressions[i]->type == DOUBLE)
+    else if (current_cell->next->next->type == DOUBLE)
     {
-      insert(c1->content.env->bindings, lambda->params[i], current_cell->next->next->content.tau->expressions[i]->content.d);
+      insert(c1->content.env->bindings, lambda->params[0], current_cell->next->next->content.d);
+    }
+  }
+  else
+  {
+    *(Dict **)&c1->content.env->bindings = init_dict(2 * provided_param_cnt);
+    for (int i = 0; i < provided_param_cnt; ++i)
+    {
+      if (current_cell->next->next->content.tau->expressions[i]->type == INTEGER)
+      {
+        insert(c1->content.env->bindings, lambda->params[i], current_cell->next->next->content.tau->expressions[i]->content.i);
+      }
+      else if (current_cell->next->next->content.tau->expressions[i]->type == IDENTIFIER || current_cell->next->next->content.tau->expressions[i]->type == STRING)
+      {
+        insert(c1->content.env->bindings, lambda->params[i], (char *)current_cell->next->next->content.tau->expressions[i]->content.s);
+      }
+      else if (current_cell->next->next->content.tau->expressions[i]->type == TAU)
+      {
+        insert(c1->content.env->bindings, lambda->params[i], (Tau *)current_cell->next->next->content.tau->expressions[i]->content.tau);
+      }
+      else if (current_cell->next->next->content.tau->expressions[i]->type == LAMBDA)
+      {
+        insert(c1->content.env->bindings, lambda->params[i], (Lambda *)current_cell->next->next->content.tau->expressions[i]->content.lambda);
+      }
+      else if (current_cell->next->next->content.tau->expressions[i]->type == DOUBLE)
+      {
+        insert(c1->content.env->bindings, lambda->params[i], current_cell->next->next->content.tau->expressions[i]->content.d);
+      }
     }
   }
 
   *(CtrlCell **)&c1->content.env->prev = current_env;
 
-  c1->prev = current_cell->prev;
-  c1->next = current_cell->next->content.lambda->body;
+  if (provided_param_cnt == lambda->param_cnt)
+  {
+    c1->prev = current_cell->prev;
+    c1->next = current_cell->next->content.lambda->body;
 
-  c2->prev = current_cell->next->content.lambda->body->prev;
-  c2->next = current_cell->next->next->next;
+    c2->prev = current_cell->next->content.lambda->body->prev;
+    c2->next = current_cell->next->next->next;
 
-  current_cell->next->content.lambda->body->prev->next = c2;
-  current_cell->next->content.lambda->body->prev = c1;
+    current_cell->next->content.lambda->body->prev->next = c2;
+    current_cell->next->content.lambda->body->prev = c1;
 
-  c1->prev->next = c1;
-  c2->next->prev = c2;
+    c1->prev->next = c1;
+    c2->next->prev = c2;
 
-  c3 = current_cell;
-  free_ctrl_cell(c3->next->next);
-  memset(&c3->next->content.s, 0, sizeof(c3->next->content));
-  free_ctrl_cell(c3->next);
-  free_ctrl_cell(c3);
+    c3 = current_cell;
+    free_ctrl_cell(c3->next->next);
+    memset(&c3->next->content.s, 0, sizeof(c3->next->content));
+    free_ctrl_cell(c3->next);
+    free_ctrl_cell(c3);
 
-  current_cell = c2->prev;
-  current_env = c1;
+    current_cell = c2->prev;
+    current_env = c1;
+  }
+  else
+  {
+    char **params = (char **)malloc((lambda->param_cnt - provided_param_cnt) * sizeof(char *));
+    if (params == NULL)
+    {
+      fprintf(stderr, "%s.\n", strerror(ENOMEM));
+      exit(EXIT_FAILURE);
+    }
+
+    for (size_t i = 0; i < lambda->param_cnt - provided_param_cnt; ++i)
+    {
+      params[i] = strdup(lambda->params[i + provided_param_cnt]);
+      if (params[i] == NULL)
+      {
+        fprintf(stderr, "%s.\n", strerror(ENOMEM));
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    for (size_t i = 0; i < lambda->param_cnt + provided_param_cnt; ++i)
+    {
+      free(lambda->params[i]);
+    }
+    free(lambda->params);
+
+    *(size_t *)&lambda->param_cnt = lambda->param_cnt - provided_param_cnt;
+    *(char ***)&lambda->params = params;
+
+    c1->prev = current_cell->prev;
+    c1->next = current_cell->next;
+
+    c2->prev = current_cell->next;
+    c2->next = current_cell->next->next->next;
+
+    c1->prev->next = c1;
+    c2->next->prev = c2;
+
+    c3 = current_cell->next->next;
+
+    current_cell->next->prev = c1;
+    current_cell->next->next = c2;
+
+    free_ctrl_cell(c3);
+    free_ctrl_cell(current_cell);
+
+    current_cell = c1;
+    current_env = c1;
+  }
 }
 void eval_cse_machine(void)
 {
