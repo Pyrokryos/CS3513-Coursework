@@ -12,23 +12,24 @@
 #define HASH_BASE 257
 #define INTEGER 1
 #define LAMBDA 46
+#define STRING 5
 #define TAU 45
 
-#define insert(dict, key, value) \
+#define insert(dict, key, val) \
   _Generic((val),                \
       char *: insert_str,        \
       int: insert_int,           \
       Tau *: insert_tau,         \
       Lambda *: insert_lambda,   \
-      double: insert_dbl)(key, val)
+      double: insert_dbl)(dict, key, val)
 
-#define dupl_val(value) \
+#define dupl_val(val) \
   _Generic((val),         \
       char *: strdup,     \
       Tau *: dupl_tau,    \
       Lambda *: dupl_lambda)(val)
 
-#define free_val(value) \
+#define free_val(val) \
   _Generic((val),         \
       char *: free_str,   \
       Tau *: free_tau,    \
@@ -87,15 +88,15 @@ typedef struct Dict
   Binding *const *const bindings;
 } Dict;
 
-Dict *init_dictionary(const size_t size);
+Dict *init_dict(const size_t size);
 
 static size_t hash_by_div(const char *const key, const size_t dict_size);
 
-static size_t insert_str(const Dict *const dict, const char *const key, const char *const val);
-static size_t insert_int(const Dict *const dict, const char *const key, const int val);
-static size_t insert_tau(const Dict *const dict, const char *const key, const Tau *const val);
-static size_t insert_lambda(const Dict *const dict, const char *const key, const Lambda *const val);
-static size_t insert_dbl(const Dict *const dict, const char *const key, const double val);
+size_t insert_str(const Dict *const dict, const char *const key, const char *const val);
+size_t insert_int(const Dict *const dict, const char *const key, const int val);
+size_t insert_tau(const Dict *const dict, const char *const key, const Tau *const val);
+size_t insert_lambda(const Dict *const dict, const char *const key, const Lambda *const val);
+size_t insert_dbl(const Dict *const dict, const char *const key, const double val);
 
 Binding *search(const Dict *const dict, const char *const key);
 
@@ -106,8 +107,8 @@ Lambda *dupl_lambda(const Lambda *const lambda);
 Binding *dupl_binding(const Binding *const binding);
 Dict *dupl_dict(const Dict *const dict);
 
-static void free_str(char *const s);
+void free_str(char *const s);
 void free_tau(Tau *const tau);
 void free_lambda(Lambda *const lambda);
-static void free_binding(Binding *const entry);
+void free_binding(Binding *const entry);
 void free_dict(Dict *const dict);

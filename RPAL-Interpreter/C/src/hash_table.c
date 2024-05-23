@@ -1,6 +1,6 @@
 #include "../include/hash_table.h"
 
-Dict *init_dictionary(size_t size)
+Dict *init_dict(size_t size)
 {
   Dict *dict = (Dict *)malloc(sizeof(Dict));
   if (dict == NULL)
@@ -10,7 +10,7 @@ Dict *init_dictionary(size_t size)
   }
 
   *(size_t *)&dict->size = size;
-  dict->bindings = (Binding **)calloc(dict->size, sizeof(Binding *));
+  *(Binding ***)&dict->bindings = (Binding **)calloc(dict->size, sizeof(Binding *));
   if (dict->bindings == NULL)
   {
     fprintf(stderr, "%s.\n", strerror(ENOMEM));
@@ -38,7 +38,7 @@ static size_t hash_by_div(const char *const key, const size_t dict_size)
   return sum % dict_size;
 }
 
-static size_t insert_str(const Dict *const dict, const char *const key, const char *const val)
+size_t insert_str(const Dict *const dict, const char *const key, const char *const val)
 {
   assert(dict != NULL && key != NULL && val != NULL);
 
@@ -48,24 +48,22 @@ static size_t insert_str(const Dict *const dict, const char *const key, const ch
   {
     if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      assert(dict->bindings[idx]->type != NULL);
-
       if (dict->bindings[idx]->type == STRING)
       {
-        free_val(dict->bindings[idx]->val.s);
+        free_val((char *)dict->bindings[idx]->val.s);
       }
       else if (dict->bindings[idx]->type == TAU)
       {
-        free_val(dict->bindings[idx]->val.tau);
+        free_val((Tau *)dict->bindings[idx]->val.tau);
       }
       else if (dict->bindings[idx]->type == LAMBDA)
       {
-        free_val(dict->bindings[idx]->val.lambda);
+        free_val((Lambda *)dict->bindings[idx]->val.lambda);
       }
-      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+      memset(&dict->bindings[idx]->val.s, 0, sizeof(dict->bindings[idx]->val));
 
       dict->bindings[idx]->type = STRING;
-      dict->bindings[idx]->val.s = dupl_val(val);
+      dict->bindings[idx]->val.s = dupl_val((char *)val);
       return EXIT_SUCCESS;
     }
 
@@ -86,15 +84,15 @@ static size_t insert_str(const Dict *const dict, const char *const key, const ch
   }
   *(char **)&binding->key = strdup(key);
   binding->type = STRING;
-  binding->val.s = dupl_val(val);
+  binding->val.s = dupl_val((char *)val);
 
   *(Binding **)&dict->bindings[idx] = binding;
 
   return EXIT_SUCCESS;
 }
-static size_t insert_int(const Dict *const dict, const char *const key, const int val)
+size_t insert_int(const Dict *const dict, const char *const key, const int val)
 {
-  assert(dict != NULL && key != NULL && val != NULL);
+  assert(dict != NULL && key != NULL);
 
   size_t idx = hash_by_div(key, dict->size);
   const size_t orig_idx = idx;
@@ -102,21 +100,19 @@ static size_t insert_int(const Dict *const dict, const char *const key, const in
   {
     if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      assert(dict->bindings[idx]->type != NULL);
-
       if (dict->bindings[idx]->type == STRING)
       {
-        free_val(dict->bindings[idx]->val.s);
+        free_val((char *)dict->bindings[idx]->val.s);
       }
       else if (dict->bindings[idx]->type == TAU)
       {
-        free_val(dict->bindings[idx]->val.tau);
+        free_val((Tau *)dict->bindings[idx]->val.tau);
       }
       else if (dict->bindings[idx]->type == LAMBDA)
       {
-        free_val(dict->bindings[idx]->val.lambda);
+        free_val((Lambda *)dict->bindings[idx]->val.lambda);
       }
-      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+      memset(&dict->bindings[idx]->val.s, 0, sizeof(dict->bindings[idx]->val));
 
       dict->bindings[idx]->type = INTEGER;
       dict->bindings[idx]->val.i = val;
@@ -146,7 +142,7 @@ static size_t insert_int(const Dict *const dict, const char *const key, const in
 
   return EXIT_SUCCESS;
 }
-static size_t insert_tau(const Dict *const dict, const char *const key, const Tau *const val)
+size_t insert_tau(const Dict *const dict, const char *const key, const Tau *const val)
 {
   assert(dict != NULL && key != NULL && val != NULL);
 
@@ -156,24 +152,22 @@ static size_t insert_tau(const Dict *const dict, const char *const key, const Ta
   {
     if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      assert(dict->bindings[idx]->type != NULL);
-
       if (dict->bindings[idx]->type == STRING)
       {
-        free_val(dict->bindings[idx]->val.s);
+        free_val((char *)dict->bindings[idx]->val.s);
       }
       else if (dict->bindings[idx]->type == TAU)
       {
-        free_val(dict->bindings[idx]->val.tau);
+        free_val((Tau *)dict->bindings[idx]->val.tau);
       }
       else if (dict->bindings[idx]->type == LAMBDA)
       {
-        free_val(dict->bindings[idx]->val.lambda);
+        free_val((Lambda *)dict->bindings[idx]->val.lambda);
       }
-      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+      memset(&dict->bindings[idx]->val.s, 0, sizeof(dict->bindings[idx]->val));
 
       dict->bindings[idx]->type = TAU;
-      dict->bindings[idx]->val.tau = dupl_val(val);
+      dict->bindings[idx]->val.tau = dupl_val((Tau *)val);
       return EXIT_SUCCESS;
     }
 
@@ -194,13 +188,13 @@ static size_t insert_tau(const Dict *const dict, const char *const key, const Ta
   }
   *(char **)&binding->key = strdup(key);
   binding->type = TAU;
-  binding->val.tau = dupl_val(val);
+  binding->val.tau = dupl_val((Tau *)val);
 
   *(Binding **)&dict->bindings[idx] = binding;
 
   return EXIT_SUCCESS;
 }
-static size_t insert_lambda(const Dict *const dict, const char *const key, const Lambda *const val)
+size_t insert_lambda(const Dict *const dict, const char *const key, const Lambda *const val)
 {
   assert(dict != NULL && key != NULL && val != NULL);
 
@@ -210,24 +204,22 @@ static size_t insert_lambda(const Dict *const dict, const char *const key, const
   {
     if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      assert(dict->bindings[idx]->type != NULL);
-
       if (dict->bindings[idx]->type == STRING)
       {
-        free_val(dict->bindings[idx]->val.s);
+        free_val((char *)dict->bindings[idx]->val.s);
       }
       else if (dict->bindings[idx]->type == TAU)
       {
-        free_val(dict->bindings[idx]->val.tau);
+        free_val((Tau *)dict->bindings[idx]->val.tau);
       }
       else if (dict->bindings[idx]->type == LAMBDA)
       {
-        free_val(dict->bindings[idx]->val.lambda);
+        free_val((Lambda *)dict->bindings[idx]->val.lambda);
       }
-      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+      memset(&dict->bindings[idx]->val.s, 0, sizeof(dict->bindings[idx]->val));
 
       dict->bindings[idx]->type = LAMBDA;
-      dict->bindings[idx]->val.lambda = dupl_val(val);
+      dict->bindings[idx]->val.lambda = dupl_val((Lambda *)val);
       return EXIT_SUCCESS;
     }
 
@@ -248,15 +240,15 @@ static size_t insert_lambda(const Dict *const dict, const char *const key, const
   }
   *(char **)&binding->key = strdup(key);
   binding->type = LAMBDA;
-  binding->val.lambda = dupl_val(val);
+  binding->val.lambda = dupl_val((Lambda *)val);
 
   *(Binding **)&dict->bindings[idx] = binding;
 
   return EXIT_SUCCESS;
 }
-static size_t insert_dbl(const Dict *const dict, const char *const key, const double val)
+size_t insert_dbl(const Dict *const dict, const char *const key, const double val)
 {
-  assert(dict != NULL && key != NULL && val != NULL);
+  assert(dict != NULL && key != NULL);
 
   size_t idx = hash_by_div(key, dict->size);
   const size_t orig_idx = idx;
@@ -264,21 +256,19 @@ static size_t insert_dbl(const Dict *const dict, const char *const key, const do
   {
     if (strncmp(dict->bindings[idx]->key, key, strlen(key)) == 0)
     {
-      assert(dict->bindings[idx]->type != NULL);
-
       if (dict->bindings[idx]->type == STRING)
       {
-        free_val(dict->bindings[idx]->val.s);
+        free_val((char *)dict->bindings[idx]->val.s);
       }
       else if (dict->bindings[idx]->type == TAU)
       {
-        free_val(dict->bindings[idx]->val.tau);
+        free_val((Tau *)dict->bindings[idx]->val.tau);
       }
       else if (dict->bindings[idx]->type == LAMBDA)
       {
-        free_val(dict->bindings[idx]->val.lambda);
+        free_val((Lambda *)dict->bindings[idx]->val.lambda);
       }
-      memset(&dict->bindings[idx]->val, 0, sizeof(dict->bindings[idx]->val));
+      memset(&dict->bindings[idx]->val.s, 0, sizeof(dict->bindings[idx]->val));
 
       dict->bindings[idx]->type = DOUBLE;
       dict->bindings[idx]->val.d = val;
@@ -349,13 +339,32 @@ Dict *merge_dicts(const Dict *const dict1, const Dict *const dict2)
   }
   else
   {
-    Dict *merged = init_dictionary(dict1->size + dict2->size);
+    Dict *merged = init_dict(dict1->size + dict2->size);
 
     for (size_t i = 0; i < dict1->size; ++i)
     {
       if (dict1->bindings[i] != NULL)
       {
-        insert(merged, dict1->bindings[i]->key, dict1->bindings[i]->val);
+        if (dict1->bindings[i]->type == STRING)
+        {
+          insert(merged, (char *)dict1->bindings[i]->key, (char *)dict1->bindings[i]->val.s);
+        }
+        else if (dict1->bindings[i]->type == INTEGER)
+        {
+          insert(merged, (char *)dict1->bindings[i]->key, dict1->bindings[i]->val.i);
+        }
+        else if (dict1->bindings[i]->type == TAU)
+        {
+          insert(merged, (char *)dict1->bindings[i]->key, (Tau *)dict1->bindings[i]->val.tau);
+        }
+        else if (dict1->bindings[i]->type == LAMBDA)
+        {
+          insert(merged, (char *)dict1->bindings[i]->key, (Lambda *)dict1->bindings[i]->val.lambda);
+        }
+        else if (dict1->bindings[i]->type == DOUBLE)
+        {
+          insert(merged, (char *)dict1->bindings[i]->key, dict1->bindings[i]->val.d);
+        }
       }
     }
 
@@ -363,7 +372,26 @@ Dict *merge_dicts(const Dict *const dict1, const Dict *const dict2)
     {
       if (dict2->bindings[i] != NULL)
       {
-        insert(merged, dict2->bindings[i]->key, dict2->bindings[i]->val);
+        if (dict2->bindings[i]->type == STRING)
+        {
+          insert(merged, (char *)dict2->bindings[i]->key, (char *)dict2->bindings[i]->val.s);
+        }
+        else if (dict2->bindings[i]->type == INTEGER)
+        {
+          insert(merged, (char *)dict2->bindings[i]->key, dict2->bindings[i]->val.i);
+        }
+        else if (dict2->bindings[i]->type == TAU)
+        {
+          insert(merged, (char *)dict2->bindings[i]->key, (Tau *)dict2->bindings[i]->val.tau);
+        }
+        else if (dict2->bindings[i]->type == LAMBDA)
+        {
+          insert(merged, (char *)dict2->bindings[i]->key, (Lambda *)dict2->bindings[i]->val.lambda);
+        }
+        else if (dict2->bindings[i]->type == DOUBLE)
+        {
+          insert(merged, (char *)dict2->bindings[i]->key, dict2->bindings[i]->val.d);
+        }
       }
     }
 
@@ -379,7 +407,7 @@ Binding *dupl_binding(const Binding *const binding)
   }
   else
   {
-    assert(binding->key != NULL && binding->val != NULL);
+    assert(binding->key != NULL);
 
     Binding *dupl = (Binding *)malloc(sizeof(Binding));
     if (dupl == NULL)
@@ -393,7 +421,7 @@ Binding *dupl_binding(const Binding *const binding)
 
     if (binding->type == STRING)
     {
-      dupl->val.s = dupl_val(binding->val.s);
+      dupl->val.s = dupl_val((char *)binding->val.s);
     }
     else if (binding->type == INTEGER)
     {
@@ -401,11 +429,11 @@ Binding *dupl_binding(const Binding *const binding)
     }
     else if (binding->type == TAU)
     {
-      dupl->val.tau = dupl_val(binding->val.tau);
+      dupl->val.tau = dupl_val((Tau *)binding->val.tau);
     }
     else if (binding->type == LAMBDA)
     {
-      dupl->val.lambda = dupl_val(binding->val.lambda);
+      dupl->val.lambda = dupl_val((Lambda *)binding->val.lambda);
     }
     else if (binding->type == DOUBLE)
     {
@@ -424,14 +452,33 @@ Dict *dupl_dict(const Dict *const dict)
   else
   {
     assert(dict->bindings != NULL);
-    
-    Dict *dupl = init_dictionary(dict->size);
+
+    Dict *dupl = init_dict(dict->size);
 
     for (size_t i = 0; i < dict->size; ++i)
     {
       if (dict->bindings[i] != NULL)
       {
-        insert(dupl, dict->bindings[i]->key, dict->bindings[i]->val);
+        if (dict->bindings[i]->type == STRING)
+        {
+          insert(dupl, (char *)dict->bindings[i]->key, (char *)dict->bindings[i]->val.s);
+        }
+        else if (dict->bindings[i]->type == INTEGER)
+        {
+          insert(dupl, (char *)dict->bindings[i]->key, dict->bindings[i]->val.i);
+        }
+        else if (dict->bindings[i]->type == TAU)
+        {
+          insert(dupl, (char *)dict->bindings[i]->key, (Tau *)dict->bindings[i]->val.tau);
+        }
+        else if (dict->bindings[i]->type == LAMBDA)
+        {
+          insert(dupl, (char *)dict->bindings[i]->key, (Lambda *)dict->bindings[i]->val.lambda);
+        }
+        else if (dict->bindings[i]->type == DOUBLE)
+        {
+          insert(dupl, (char *)dict->bindings[i]->key, dict->bindings[i]->val.d);
+        }
       }
     }
 
@@ -439,11 +486,11 @@ Dict *dupl_dict(const Dict *const dict)
   }
 }
 
-static void free_str(char *const s)
+void free_str(char *const s)
 {
   free((void *)s);
 }
-static void free_binding(Binding *const binding)
+void free_binding(Binding *const binding)
 {
   if (binding == NULL)
   {
@@ -451,24 +498,24 @@ static void free_binding(Binding *const binding)
   }
   else
   {
-    assert(binding->key != NULL && binding->val != NULL);
+    assert(binding->key != NULL);
 
     free((void *)binding->key);
     memset(&binding->key, 0, sizeof(binding->key));
 
     if (binding->type == STRING)
     {
-      free_val(binding->val.s);
+      free_val((char *)binding->val.s);
     }
     else if (binding->type == TAU)
     {
-      free_val(binding->val.tau);
+      free_val((Tau *)binding->val.tau);
     }
     else if (binding->type == LAMBDA)
     {
-      free_val(binding->val.lambda);
+      free_val((Lambda *)binding->val.lambda);
     }
-    memset(&binding->val, 0, sizeof(binding->val));
+    memset(&binding->val.s, 0, sizeof(binding->val));
 
     binding->type = 0;
 
