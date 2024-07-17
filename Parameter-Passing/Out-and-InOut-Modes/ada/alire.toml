@@ -1,0 +1,12 @@
+name = "ada"
+description = "A Demonstration of Out Mode and In Out Mode for passing Parameters."
+version = "0.1.0-dev"
+
+authors = ["Pyrokryos"]
+maintainers = ["Pyrokryos <dulina.perera@outlook.com>"]
+maintainers-logins = ["Pyrokryos"]
+licenses = "GPL-3.0-or-later"
+website = ""
+tags = []
+
+executables = ["ada"]
